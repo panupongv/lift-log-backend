@@ -1,0 +1,19 @@
+{
+  "name": "lift-log-backend",
+  "version": "1.0.0",
+  "description": "REST API for Lift Log App",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/panupongv/lift-log-backend.git"
+  },
+  "author": "panupongv",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/panupongv/lift-log-backend/issues"
+  },
+  "homepage": "https://github.com/panupongv/lift-log-backend#readme"
+}
