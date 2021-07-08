@@ -2,9 +2,14 @@
   "name": "lift-log-backend",
   "version": "1.0.0",
   "description": "REST API for Lift Log App",
+<<<<<<< HEAD
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
+=======
+  "main": "index.js",
+  "scripts": {
+>>>>>>> 2e6403f8be81ae6dff9a510ee67f022092caca83
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,10 +21,14 @@
   "bugs": {
     "url": "https://github.com/panupongv/lift-log-backend/issues"
   },
+<<<<<<< HEAD
   "homepage": "https://github.com/panupongv/lift-log-backend#readme",
   "dependencies": {
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "mongoose": "^5.13.2"
   }
+=======
+  "homepage": "https://github.com/panupongv/lift-log-backend#readme"
+>>>>>>> 2e6403f8be81ae6dff9a510ee67f022092caca83
 }
