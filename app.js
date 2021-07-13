@@ -16,8 +16,7 @@ mongoose.connect(
         useNewUrlParser: true,
         useUnifiedTopology: true
     },
-);
-mongoose.connection.on('connected', () => {
+).then(() => {
     console.log('Connected to Mongoo');
     app.listen(PORT, () => {
         console.log(`Lift Log Backend running of PORT ${PORT}`);
