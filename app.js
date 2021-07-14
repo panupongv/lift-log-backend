@@ -1,14 +1,17 @@
-const mongoose = require('mongoose');
-const express = require('express');
-
 require('dotenv/config');
 
-const bodyParser = require('body-parser')
-const jsonParser = bodyParser.json()
+const mongoose = require('mongoose');
+const express = require('express');
+const bodyParser = require('body-parser');
+const jsonParser = bodyParser.json();
+
+const exercisesRoute = require('./routes/exercises');
 
 
 const app = express();
 const PORT = process.env.PORT || 7317;
+
+app.use('/api/:username/exercises', exercisesRoute);
 
 mongoose.connect(
     process.env.DB_CONNECTION,
