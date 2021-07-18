@@ -41,12 +41,45 @@ router.post('/signup', jsonParser, (req, res, next) => {
                                 console.log(err);
                                 return res.status(500).json({
                                     error: err
-                                })
+                                });
                             });
                     }
                 });
             }
         });
-})
+});
 
-module.exports = router;
+route.post('/login', (req, res, next) => {
+    const username = req.body.username
+    User.find({ username: username })
+        .exec()
+        .then((user) => {
+            if (user.length < 1) {
+                return res.status(404).json({
+                    message: `Cannot find user ${username}`
+                });
+            }
+            bcrypt.compare(req.body.password, user[0].password, (err, checkResult) => {
+                if (err) {
+                    return res.status(401).json({
+                        message: 'Authentication failed'
+                    });
+                }
+                if (checkResult) {
+                    return res.status(200).json({
+                        message: 'Auth successful'
+                    });
+                }
+                return res.status(401).json({
+                    message: 'Authentication failed'
+                });
+            });
+        })
+        .catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            });
+        });
+
+    module.exports = router;
