@@ -1,7 +1,10 @@
+require('dotenv/config');
+
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 
@@ -49,7 +52,7 @@ router.post('/signup', jsonParser, (req, res, next) => {
         });
 });
 
-route.post('/login', (req, res, next) => {
+router.post('/login', jsonParser, (req, res, next) => {
     const username = req.body.username
     User.find({ username: username })
         .exec()
@@ -66,8 +69,13 @@ route.post('/login', (req, res, next) => {
                     });
                 }
                 if (checkResult) {
+                    const payload = {
+                        recordId: user._id
+                    };
+                    const token = jwt.sign(payload, process.env.JWT_SECRET);
                     return res.status(200).json({
-                        message: 'Auth successful'
+                        message: 'Auth successful',
+                        token: token
                     });
                 }
                 return res.status(401).json({
@@ -81,5 +89,6 @@ route.post('/login', (req, res, next) => {
                 error: err
             });
         });
+});
 
-    module.exports = router;
+module.exports = router;
