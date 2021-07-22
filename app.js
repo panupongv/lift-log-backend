@@ -5,12 +5,15 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
+
+const authRoutes = require('./routes/authentication');
 const exercisesRoute = require('./routes/exercises');
 
 
 const app = express();
 const PORT = process.env.PORT || 7317;
 
+app.use('/api/auth', authRoutes);
 app.use('/api/:username/exercises', exercisesRoute);
 
 mongoose.connect(
