@@ -8,8 +8,8 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 
-const bodyParser = require('body-parser')
-const jsonParser = bodyParser.json()
+const bodyParser = require('body-parser');
+const jsonParser = bodyParser.json();
 
 router.post('/signup', jsonParser, (req, res, next) => {
     const username = req.body.username;
@@ -57,7 +57,7 @@ router.post('/login', jsonParser, (req, res, next) => {
     User.findOne({ username: username })
         .exec()
         .then((user) => {
-            if (user.length < 1) {
+            if (!user || user.length < 1) {
                 return res.status(404).json({
                     message: `Cannot find user ${username}`
                 });
