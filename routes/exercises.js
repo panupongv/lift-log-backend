@@ -1,29 +1,26 @@
 const express = require("express");
-const { User, ExerciseSchema } = require("../models/User");
+const User = require("../models/user");
 const router = express.Router({ mergeParams: true });
 
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
-router.get('/', (req, res) => {
+const authorise = require('./authorisation');
+
+router.get('/', authorise(), (req, res) => {
     const username = req.params.username;
-    User.find({
+    User.findOne({
         'username': username,
-    }).then((result) => {
-        if (result.length > 0) {
-            const user = result[0];
-            console.log(user);
-            if (user._id.toString() !== req.header('userId')) {
-                res.status(500).send(`Get Exercise: Not allowed to access User ${username}`);
-                return;
-            }
-            res.status(200).send(user.exercises);
-            return;
+    }).then((user) => {
+        if (user) {
+            return res.status(200).send(user.exercises);
         }
         res.status(404).send(`Get Exercise: User ${username} not found`);
     }).catch((err) => {
         console.log(err);
-        res.send(err);
+        return res.status(500).json({
+            error: err
+        })
     });
 });
 
