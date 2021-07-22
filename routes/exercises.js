@@ -1,11 +1,13 @@
 const express = require("express");
-const User = require("../models/user");
 const router = express.Router({ mergeParams: true });
 
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
 const authorise = require('./authorisation');
+
+const User = require("../models/user").User;
+const Exercise = require("../models/user").Exercise;
 
 router.get('/', authorise(), (req, res) => {
     const username = req.params.username;
@@ -24,26 +26,43 @@ router.get('/', authorise(), (req, res) => {
     });
 });
 
-// router.post('/', jsonParser, (req, res) => {
-//     const username = req.params.username;
-//     const exerciseName = req.body.exerciseName;
 
-//     if (!exerciseName) {
-//         res.status(400).send(`Create Exercise: Please specify the exercise name`);
-//         return;
-//     }
+router.post('/', [authorise(), jsonParser], (req, res) => {
+    const username = req.params.username;
+    const exerciseName = req.body.exerciseName;
 
-//     User.findOneAndUpdate(
-//         {
-//             '_id': req.header('userId'),
-//             'username': username,
-//         },
-//         {
-//             $push: {
-//                 ExerciseSchema: { 'name': exerciseName }
-//             }
-//         });
+    if (!exerciseName) {
+        return res.status(400).send(`Create Exercise: Please provide an exercise name`);
+    }
 
-// });
+    User.findOne({ 'username': username })
+        .exec()
+        .then((user) => {
+
+            if (!user) {
+                return res.send('no user');
+            }
+
+            if (user.exercises.some(exercise => exercise.name === exerciseName)) {
+                return res.send(`Create Exercise: exercise ${exerciseName} already exist`);
+            }
+            
+            user.exercises.push(new Exercise({ name: exerciseName }));
+            user.save()
+                .then((user) => {
+                    return res.send(user);
+                })
+                .catch((err) => {
+                    return res.status(500).json({
+                        error: err
+                    });
+                });
+        })
+        .catch((err) => {
+            return res.status(500).json({
+                error: err
+            });
+        });
+});
 
 module.exports = router;

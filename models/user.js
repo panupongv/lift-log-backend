@@ -11,4 +11,5 @@ const userSchema = mongoose.Schema({
     sessions: { type: [], default: [] },
 });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports.Exercise = mongoose.model('Exercise', exerciseSchema);
+module.exports.User = mongoose.model('User', userSchema);
