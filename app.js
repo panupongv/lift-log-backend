@@ -6,7 +6,7 @@ const express = require('express');
 const bodyParser = require('body-parser')
 const jsonParser = bodyParser.json()
 
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/authentication');
 
 const app = express();
 const PORT = process.env.PORT || 7317;

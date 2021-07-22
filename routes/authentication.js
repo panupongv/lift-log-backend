@@ -8,8 +8,8 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 
-const bodyParser = require('body-parser')
-const jsonParser = bodyParser.json()
+const bodyParser = require('body-parser');
+const jsonParser = bodyParser.json();
 
 router.post('/signup', jsonParser, (req, res, next) => {
     const username = req.body.username;
@@ -54,15 +54,15 @@ router.post('/signup', jsonParser, (req, res, next) => {
 
 router.post('/login', jsonParser, (req, res, next) => {
     const username = req.body.username
-    User.find({ username: username })
+    User.findOne({ username: username })
         .exec()
         .then((user) => {
-            if (user.length < 1) {
+            if (!user || user.length < 1) {
                 return res.status(404).json({
                     message: `Cannot find user ${username}`
                 });
             }
-            bcrypt.compare(req.body.password, user[0].password, (err, checkResult) => {
+            bcrypt.compare(req.body.password, user.password, (err, checkResult) => {
                 if (err) {
                     return res.status(401).json({
                         message: 'Authentication failed'
@@ -70,7 +70,7 @@ router.post('/login', jsonParser, (req, res, next) => {
                 }
                 if (checkResult) {
                     const payload = {
-                        recordId: user._id
+                        username: user.username
                     };
                     const token = jwt.sign(payload, process.env.JWT_SECRET);
                     return res.status(200).json({
