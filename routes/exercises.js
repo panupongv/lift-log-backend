@@ -15,9 +15,9 @@ router.get('/', authorise(), (req, res) => {
         'username': username,
     }).then((user) => {
         if (user) {
-            return res.status(200).send(user.exercises);
+            return res.status(200).json({ exercises: user.exercises });
         }
-        res.status(404).send(`Get Exercise: User ${username} not found`);
+        res.status(404).json({ message: `Get Exercise: User ${username} not found` });
     }).catch((err) => {
         console.log(err);
         return res.status(500).json({
@@ -32,25 +32,31 @@ router.post('/', [authorise(), jsonParser], (req, res) => {
     const exerciseName = req.body.exerciseName;
 
     if (!exerciseName) {
-        return res.status(400).send(`Create Exercise: Please provide an exercise name`);
+        return res.status(400).json({
+            message: `Create Exercise: Please provide an exercise name`
+        });
     }
 
     User.findOne({ 'username': username })
         .exec()
         .then((user) => {
-
             if (!user) {
-                return res.send('no user');
+                return res.status(400).json({
+                    message: `Create Exercise: Please specify user`
+                })
+            }
+            if (user.exercises.some(exercise => exercise.name === exerciseName)) {
+                return res.status(400).json({
+                    message: `Create Exercise: exercise ${exerciseName} already exist`
+                });
             }
 
-            if (user.exercises.some(exercise => exercise.name === exerciseName)) {
-                return res.send(`Create Exercise: exercise ${exerciseName} already exist`);
-            }
-            
             user.exercises.push(new Exercise({ name: exerciseName }));
             user.save()
                 .then((user) => {
-                    return res.send(user);
+                    return res.status(201).json({
+                        exercises: user.exercises
+                    });
                 })
                 .catch((err) => {
                     return res.status(500).json({
