@@ -59,24 +59,77 @@ router.post('/', [authorise(), jsonParser], (req, res) => {
                     });
                 })
                 .catch((err) => {
+                    console.log(err);
                     return res.status(500).json({
                         error: err
                     });
                 });
         })
         .catch((err) => {
+            console.log(err);
             return res.status(500).json({
                 error: err
             });
         });
 });
 
-router.put('/:exerciseId', authorise(), (req, res) => {
-    
+router.put('/:exerciseId', [authorise(), jsonParser], (req, res) => {
+    const username = req.params.username;
+    const exerciseId = req.params.exerciseId;
+    const exerciseName = req.body.exerciseName;
+
+    if (!exerciseName) {
+        return res.status(400).json({
+            message: `Update Exercise: Please provide an exercise name`
+        });
+    }
+
+    User.findOne({ 'username': username })
+        .exec()
+        .then((user) => {
+            if (!user) {
+                return res.status(400).json({
+                    message: `Update Exercise: Please specify user`
+                })
+            }
+            if (!user.exercises.map(exercise => exercise._id).includes(exerciseId)) {
+                return res.status(400).json({
+                    message: `Update Exercise: exerciseId ${exerciseId} does not exist`
+                });
+            }
+            if (user.exercises.some(exercise => exercise.name === exerciseName)) {
+                return res.status(400).json({
+                    message: `Create Exercise: exerciseName ${exerciseName} already exist`
+                });
+            }
+
+            const updateIndex = user.exercises.map(exercise => exercise._id).indexOf(exerciseId);
+
+            user.exercises[updateIndex].name = exerciseName;
+
+            user.save()
+                .then((user) => {
+                    return res.status(201).json({
+                        exercises: user.exercises
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    return res.status(500).json({
+                        error: err
+                    });
+                });
+        })
+        .catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            });
+        });
 });
 
 router.delete('/:exerciseId', authorise(), (req, res) => {
-    
+
 });
 
 module.exports = router;
