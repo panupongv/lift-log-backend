@@ -71,4 +71,12 @@ router.post('/', [authorise(), jsonParser], (req, res) => {
         });
 });
 
+router.put('/:exerciseId', authorise(), (req, res) => {
+    
+});
+
+router.delete('/:exerciseId', authorise(), (req, res) => {
+    
+});
+
 module.exports = router;
