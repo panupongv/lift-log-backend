@@ -9,6 +9,7 @@ const authorise = require('./authorisation');
 const User = require("../models/user").User;
 const Exercise = require("../models/user").Exercise;
 
+
 router.get('/', authorise(), (req, res) => {
     const username = req.params.username;
     User.findOne({
@@ -40,6 +41,7 @@ router.post('/', [authorise(), jsonParser], (req, res) => {
     User.findOne({ 'username': username })
         .exec()
         .then((user) => {
+
             if (!user) {
                 return res.status(400).json({
                     message: `Create Exercise: Please specify user`
@@ -73,6 +75,7 @@ router.post('/', [authorise(), jsonParser], (req, res) => {
         });
 });
 
+
 router.put('/:exerciseId', [authorise(), jsonParser], (req, res) => {
     const username = req.params.username;
     const exerciseId = req.params.exerciseId;
@@ -87,6 +90,7 @@ router.put('/:exerciseId', [authorise(), jsonParser], (req, res) => {
     User.findOne({ 'username': username })
         .exec()
         .then((user) => {
+
             if (!user) {
                 return res.status(400).json({
                     message: `Update Exercise: Please specify user`
@@ -104,12 +108,15 @@ router.put('/:exerciseId', [authorise(), jsonParser], (req, res) => {
             }
 
             const updateIndex = user.exercises.map(exercise => exercise._id).indexOf(exerciseId);
-
+            const originalExercise = {
+                _id: user.exercises[updateIndex]._id,
+                name: user.exercises[updateIndex].name
+            };
             user.exercises[updateIndex].name = exerciseName;
-
             user.save()
                 .then((user) => {
-                    return res.status(201).json({
+                    return res.status(200).json({
+                        originalExercise: originalExercise,
                         exercises: user.exercises
                     });
                 })
@@ -129,7 +136,50 @@ router.put('/:exerciseId', [authorise(), jsonParser], (req, res) => {
 });
 
 router.delete('/:exerciseId', authorise(), (req, res) => {
+    const username = req.params.username;
+    const exerciseId = req.params.exerciseId;
 
+    User.findOne({ 'username': username })
+        .exec()
+        .then((user) => {
+
+            if (!user) {
+                return res.status(400).json({
+                    message: `Delete Exercise: Please specify user`
+                })
+            }
+            if (!user.exercises.map(exercise => exercise._id).includes(exerciseId)) {
+                return res.status(400).json({
+                    message: `Delete Exercise: exerciseId ${exerciseId} does not exist`
+                });
+            }
+
+            const deleteIndex = user.exercises.map(exercise => exercise._id).indexOf(exerciseId);
+            const deletedExercise = user.exercises.splice(deleteIndex, 1);
+
+            console.log(`exercises: ${user.exercises}`);
+            console.log(`deleted: ${deletedExercise}`);
+
+            user.save()
+                .then((user) => {
+                    return res.status(200).json({
+                        deletedExercise: deletedExercise,
+                        exercises: user.exercises
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    return res.status(500).json({
+                        error: err
+                    });
+                });
+        })
+        .catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            });
+        });
 });
 
 module.exports = router;
