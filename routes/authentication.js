@@ -8,10 +8,7 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user').User;
 
-const bodyParser = require('body-parser');
-const jsonParser = bodyParser.json();
-
-router.post('/signup', jsonParser, (req, res, next) => {
+router.post('/signup', (req, res, next) => {
     const username = req.body.username;
     User.find({ username: username })
         .exec()
@@ -52,7 +49,7 @@ router.post('/signup', jsonParser, (req, res, next) => {
         });
 });
 
-router.post('/login', jsonParser, (req, res, next) => {
+router.post('/login', (req, res, next) => {
     const username = req.body.username
     User.findOne({ username: username })
         .exec()
