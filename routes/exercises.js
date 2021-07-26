@@ -28,7 +28,7 @@ router.get('/', authorise(), (req, res) => {
 });
 
 
-router.post('/', [authorise(), jsonParser], (req, res) => {
+router.post('/', authorise(), (req, res) => {
     const username = req.params.username;
     const exerciseName = req.body.exerciseName;
 
@@ -76,7 +76,7 @@ router.post('/', [authorise(), jsonParser], (req, res) => {
 });
 
 
-router.put('/:exerciseId', [authorise(), jsonParser], (req, res) => {
+router.put('/:exerciseId', authorise(), (req, res) => {
     const username = req.params.username;
     const exerciseId = req.params.exerciseId;
     const exerciseName = req.body.exerciseName;
@@ -134,6 +134,7 @@ router.put('/:exerciseId', [authorise(), jsonParser], (req, res) => {
             });
         });
 });
+
 
 router.delete('/:exerciseId', authorise(), (req, res) => {
     const username = req.params.username;
