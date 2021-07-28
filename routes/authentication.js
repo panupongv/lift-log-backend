@@ -2,7 +2,6 @@ require('dotenv/config');
 
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -58,7 +57,15 @@ router.post('/signup', (req, res, next) => {
 });
 
 router.post('/login', (req, res, next) => {
-    const username = req.body.username
+    const username = req.body.username;
+    const password = req.body.password;
+
+    if (!username || !password) {
+        return res.status(400).json({
+            message: `Login: Please provide a valid username and password`
+        });
+    }
+
     User.findOne({ username: username })
         .exec()
         .then((user) => {
