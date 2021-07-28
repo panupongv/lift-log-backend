@@ -1,8 +1,12 @@
+const supertest = require('supertest');
+
 const mongoose = require('mongoose');
 
 const dbHandler = require('./db-handler');
 
+const app = require('../app');
 const User = require('../models/user').User;
+const { TestWatcher } = require('jest');
 
 
 beforeAll(async () => await dbHandler.connect());
@@ -11,27 +15,16 @@ beforeAll(async () => await dbHandler.connect());
 
 afterAll(async () => await dbHandler.closeDatabase());
 
-describe('User Authentication', () => {
+describe('POST /auth/signup', () => {
 
-    it('can be created correctly', async () => {
-        expect(async () => {
-            const user = new User({
-                username: '1234',
-                password: 'hashed-secure-password'
-            })
+    describe('missing a username or a password', () => {
+        test('should receive a 400 - Bad Request response', async () => {
+            const noUsernameResponse = await supertest(app).post('/api/auth/signup').send({password: "password"});
+            expect(noUsernameResponse.statusCode).toBe(400);
 
-            user.save()
-                .then((user) => {
-                    console.log(`Inserted: ${user}`);
-                    User.find()
-                        .then((users) => {
-                            console.log(`DB content: ${users}.`);
-                        });
-                })
-
-
-        })
-            .not
-            .toThrow();
+            const noPasswordResponse = await supertest(app).post('/api/auth/signup').send({username: "username"});
+            expect(noPasswordResponse.statusCode).toBe(400);
+        });
+        
     });
 });

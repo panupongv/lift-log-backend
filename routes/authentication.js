@@ -10,6 +10,14 @@ const User = require('../models/user').User;
 
 router.post('/signup', (req, res, next) => {
     const username = req.body.username;
+    const password = req.body.password;
+
+    if (!username || !password) {
+        return res.status(400).json({
+            message: `Signup: Please provide a valid username and password`
+        });
+    }
+
     User.find({ username: username })
         .exec()
         .then((user) => {
