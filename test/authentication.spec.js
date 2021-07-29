@@ -1,7 +1,4 @@
 const supertest = require('supertest');
-
-const mongoose = require('mongoose');
-
 const dbHandler = require('./db-handler');
 
 const app = require('../app');
@@ -11,9 +8,7 @@ const hashPassword = require('./test-utils').hashPassword;
 
 
 beforeAll(async () => await dbHandler.connect());
-
 afterEach(async () => await dbHandler.clearDatabase());
-
 afterAll(async () => await dbHandler.closeDatabase());
 
 describe('POST /auth/signup', () => {
