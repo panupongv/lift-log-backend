@@ -86,7 +86,7 @@ router.post('/login', (req, res, next) => {
                     };
                     const token = jwt.sign(payload, process.env.JWT_SECRET);
                     return res.status(200).json({
-                        message: 'Auth successful',
+                        message: 'Authentication successful',
                         token: token
                     });
                 }

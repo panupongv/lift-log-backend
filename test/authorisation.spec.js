@@ -12,7 +12,6 @@ const dbHandler = require('./db-handler');
 const User = require('../models/user').User;
 const authorise = require('../routes/authorisation');
 
-//dotenv.config({ path: path.resolve(__dirname, `../.env.${process.env.ENVIRONMENT}`) });
 
 beforeAll(async () => await dbHandler.connect());
 afterEach(async () => await dbHandler.clearDatabase());
@@ -20,51 +19,72 @@ afterAll(async () => await dbHandler.closeDatabase());
 
 describe('Authorisation Middleware', () => {
 
-    const validStatusCode = 200;
+    process.env.JWT_SECRET = 'bypass-key';
 
     const username = 'username';
-    const jwtKey = process.env.JWT_SECRET = 'bypass-key';
+    const usernameWithNoPermission = 'another-user'
 
     const mockRouteTemplate = '/api/:username/mockRoute';
-    const mockRoute = mockRouteTemplate.replace(':username', username);
+    const mockRouteValidUser = mockRouteTemplate.replace(':username', username);
+    const mockRouteInvalidUser = mockRouteTemplate.replace(':username', usernameWithNoPermission);
 
-    console.log(`key: ${process.env.JWT_SECRET}`);
-    console.log(`route: ${mockRoute}`);
+    const validStatusCode = 200;
+    const validResponse = { message: 'OK' };
 
     app.get(mockRouteTemplate, authorise(), (req, res) => {
-        console.log(`username: ${req.params.username}`);
-        res.status(validStatusCode).json({ message: 'OK' });
+        res.status(validStatusCode).json(validResponse);
     });
 
     describe('given a valid authorisation token that matches the target username in params', () => {
-        it(`should proceed to the 'next()' method (which returns ${validStatusCode})`, async () => {
+
+        it(`should proceed to the 'next()' method (which returns ${validStatusCode} and ${JSON.stringify(validResponse)})`, async () => {
             const validPayload = { username: username };
             const validToken = jwt.sign(validPayload, process.env.JWT_SECRET);
             const response = await supertest(app)
-                .get(mockRoute)
+                .get(mockRouteValidUser)
                 .set('authorization', `Bearer ${validToken}`)
-                .send({});
-            console.log(`res: ${JSON.stringify(response)}`);
+                .send();
+
             expect(response.statusCode).toBe(validStatusCode);
+            expect(JSON.parse(response.text)).toMatchObject(validResponse);
         });
     });
 
     describe('given no authorisation token', () => {
-        it('should return a 401 - Unauthorised response', async () => {
-            const response = await supertest(app).get(mockRoute).send({});
+        it('should return a 401 - Unauthorised response (missing token)', async () => {
+            const expectedMessage = { message: 'Access denied: missing authorisation token.' };
+            const response = await supertest(app).get(mockRouteValidUser).send();
+
             expect(response.statusCode).toBe(401);
+            expect(JSON.parse(response.text)).toMatchObject(expectedMessage);
         });
     });
 
     describe('given an invalid authorisation token', () => {
-        it('should return a 401 - Unauthorised response', async () => {
-            
+        it('should return a 401 - Unauthorised response (unable to verify token)', async () => {
+            const expectedMessage = { message: 'Access denied: unable to verify token.' };
+            const response = await supertest(app)
+                .get(mockRouteValidUser)
+                .set('authorization', `Some made up invalid token invalid`)
+                .send();
+
+            expect(response.statusCode).toBe(401);
+            expect(JSON.parse(response.text)).toMatchObject(expectedMessage);
         });
     });
 
     describe('given a valid authorisation token but on a route with unmatching username', () => {
         it('should return a 401 - Unauthorised response', async () => {
-            
+            const payload = { username: username };
+            const token = jwt.sign(payload, process.env.JWT_SECRET);
+            const expectedMessage = { message: `Access denied: token does not grant access to ${usernameWithNoPermission}.` };
+            const response = await supertest(app)
+                .get(mockRouteInvalidUser)
+                .set('authorization', `Bearer ${token}`)
+                .send();
+
+            expect(response.statusCode).toBe(401);
+            expect(JSON.parse(response.text)).toMatchObject(expectedMessage);
         });
     });
 
