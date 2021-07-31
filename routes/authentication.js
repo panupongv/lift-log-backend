@@ -2,7 +2,6 @@ require('dotenv/config');
 
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -23,7 +22,7 @@ router.post('/signup', (req, res, next) => {
         .then((user) => {
             if (user.length >= 1) {
                 return res.status(409).json({
-                    message: `Username ${username} already exist.`
+                    message: `Signup: Username ${username} already exist.`
                 });
             } else {
                 bcrypt.hash(req.body.password, 10, (err, hash) => {
@@ -42,7 +41,7 @@ router.post('/signup', (req, res, next) => {
                             .then((result) => {
                                 console.log(result);
                                 return res.status(201).json({
-                                    message: `Record for user "${username}" created.`
+                                    message: `Signup: Record for user "${username}" created.`
                                 })
                             })
                             .catch((err) => {
@@ -58,19 +57,27 @@ router.post('/signup', (req, res, next) => {
 });
 
 router.post('/login', (req, res, next) => {
-    const username = req.body.username
+    const username = req.body.username;
+    const password = req.body.password;
+
+    if (!username || !password) {
+        return res.status(400).json({
+            message: `Login: Please provide a valid username and password`
+        });
+    }
+
     User.findOne({ username: username })
         .exec()
         .then((user) => {
             if (!user || user.length < 1) {
                 return res.status(404).json({
-                    message: `Cannot find user ${username}`
+                    message: `Login: Cannot find user ${username}`
                 });
             }
             bcrypt.compare(req.body.password, user.password, (err, checkResult) => {
                 if (err) {
                     return res.status(401).json({
-                        message: 'Authentication failed'
+                        message: 'Login: Authentication failed'
                     });
                 }
                 if (checkResult) {
@@ -79,12 +86,12 @@ router.post('/login', (req, res, next) => {
                     };
                     const token = jwt.sign(payload, process.env.JWT_SECRET);
                     return res.status(200).json({
-                        message: 'Auth successful',
+                        message: 'Login: Authentication successful',
                         token: token
                     });
                 }
                 return res.status(401).json({
-                    message: 'Authentication failed'
+                    message: 'Login: Authentication failed'
                 });
             });
         })
