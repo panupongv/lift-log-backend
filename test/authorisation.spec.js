@@ -53,6 +53,7 @@ describe('Authorisation Middleware', () => {
     describe('given no authorisation token', () => {
         it('should return a 401 - Unauthorised response (missing token)', async () => {
             const expectedMessage = { message: 'Access denied: missing authorisation token.' };
+            
             const response = await supertest(app).get(mockRouteValidUser).send();
 
             expect(response.statusCode).toBe(401);
@@ -63,6 +64,7 @@ describe('Authorisation Middleware', () => {
     describe('given an invalid authorisation token', () => {
         it('should return a 401 - Unauthorised response (unable to verify token)', async () => {
             const expectedMessage = { message: 'Access denied: unable to verify token.' };
+            
             const response = await supertest(app)
                 .get(mockRouteValidUser)
                 .set('authorization', `Some made up invalid token invalid`)
@@ -78,6 +80,7 @@ describe('Authorisation Middleware', () => {
             const payload = { username: username };
             const token = jwt.sign(payload, process.env.JWT_SECRET);
             const expectedMessage = { message: `Access denied: token does not grant access to ${usernameWithNoPermission}.` };
+            
             const response = await supertest(app)
                 .get(mockRouteInvalidUser)
                 .set('authorization', `Bearer ${token}`)
