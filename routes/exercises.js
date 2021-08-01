@@ -45,19 +45,20 @@ router.post('/', authorise, (req, res) => {
 
             if (!user) {
                 return res.status(400).json({
-                    message: `Create Exercise: Please specify user`
+                    message: `Create Exercise: Cannot find user ${username}`
                 })
             }
-            if (user.exercises.some(exercise => exercise.name === exerciseName)) {
+            if (user.exercises && user.exercises.some(exercise => exercise.name === exerciseName)) {
                 return res.status(400).json({
                     message: `Create Exercise: exercise ${exerciseName} already exist`
                 });
             }
-
-            user.exercises.push(new Exercise({ name: exerciseName }));
+            const newExercise = new Exercise({ name: exerciseName });
+            user.exercises.push(newExercise);
             user.save()
                 .then((user) => {
                     return res.status(201).json({
+                        createdExercise: newExercise,
                         exercises: user.exercises
                     });
                 })
@@ -118,6 +119,7 @@ router.put('/:exerciseId', authorise, (req, res) => {
                 .then((user) => {
                     return res.status(200).json({
                         originalExercise: originalExercise,
+                        updatedExercise: user.exercises[updateIndex],
                         exercises: user.exercises
                     });
                 })

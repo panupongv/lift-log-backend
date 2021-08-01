@@ -13,7 +13,6 @@ beforeAll(async () => {
     await dbHandler.connect();
 
     authorisationStub = sinon.stub(authorisation, 'authorise');
-    
 
     app = require('../app');
 });
@@ -86,6 +85,32 @@ describe('GET /api/:username/exercises', () => {
             expect(response.statusCode).toBe(404);
             expect(responseBody.message).toMatch(expectedResponse.message);
             expect(responseBody.exercises).toBeUndefined();
+        });
+    });
+});
+
+describe('GET /api/:username/exercises', () => {
+    describe('given a valid user and an exercise that is yet to exist', () => {
+        it('should return 201 - Created with the new exercise and the list of exercises', async () => {
+
+        });
+    });
+    
+    describe('given no exercise name in the request body', () => {
+        it('should return 400 - Bad request with just an info message (no exercise name)', async () => {
+
+        });
+    });
+
+    describe('given a username without a user record', () => {
+        it('should return 400 - Bad request with just an info message (cannot find user)', async () => {
+
+        });
+    });
+
+    describe('given a valid username but the exercise name is a duplicate', () => {
+        it('should return 400 - Bad request with just an info message (exercise already exist)', async () => {
+
         });
     });
 });
