@@ -1,7 +1,5 @@
 
-//const dotenv = require('dotenv');
 require('dotenv/config');
-const path = require('path');
 
 const jwt = require("jsonwebtoken");
 const supertest = require('supertest');
@@ -9,7 +7,6 @@ const supertest = require('supertest');
 const app = require('../app');
 const dbHandler = require('./db-handler');
 
-const User = require('../models/user').User;
 const authorise = require('../routes/authorisation');
 
 

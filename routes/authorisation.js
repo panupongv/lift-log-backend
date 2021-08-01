@@ -1,7 +1,7 @@
 require('dotenv/config');
 const jwt = require("jsonwebtoken");
 
-module.exports = () => {
+module.exports.authorise = () => {
     return (req, res, next) => {
         const queryUsername = req.params.username;
         const token = req.headers["authorization"];

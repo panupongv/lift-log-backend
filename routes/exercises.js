@@ -1,24 +1,25 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
 
-const bodyParser = require('body-parser');
-const jsonParser = bodyParser.json();
-
-const authorise = require('./authorisation');
+const authorise = require('./authorisation').authorise;
 
 const User = require("../models/user").User;
 const Exercise = require("../models/user").Exercise;
 
 
-router.get('/', authorise(), (req, res) => {
+router.get('/', authorise, (req, res) => {
     const username = req.params.username;
+
     User.findOne({
         'username': username,
     }).then((user) => {
         if (user) {
-            return res.status(200).json({ exercises: user.exercises });
+            return res.status(200).json({
+                message: 'Get Exercises: Success',
+                exercises: user.exercises
+            });
         }
-        res.status(404).json({ message: `Get Exercise: User ${username} not found` });
+        return res.status(404).json({ message: `Get Exercises: User ${username} not found` });
     }).catch((err) => {
         console.log(err);
         return res.status(500).json({
@@ -28,7 +29,7 @@ router.get('/', authorise(), (req, res) => {
 });
 
 
-router.post('/', authorise(), (req, res) => {
+router.post('/', authorise, (req, res) => {
     const username = req.params.username;
     const exerciseName = req.body.exerciseName;
 
@@ -76,7 +77,7 @@ router.post('/', authorise(), (req, res) => {
 });
 
 
-router.put('/:exerciseId', authorise(), (req, res) => {
+router.put('/:exerciseId', authorise, (req, res) => {
     const username = req.params.username;
     const exerciseId = req.params.exerciseId;
     const exerciseName = req.body.exerciseName;
@@ -136,7 +137,7 @@ router.put('/:exerciseId', authorise(), (req, res) => {
 });
 
 
-router.delete('/:exerciseId', authorise(), (req, res) => {
+router.delete('/:exerciseId', authorise, (req, res) => {
     const username = req.params.username;
     const exerciseId = req.params.exerciseId;
 
