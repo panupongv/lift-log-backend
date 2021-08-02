@@ -13,7 +13,7 @@ router.post('/signup', (req, res, next) => {
 
     if (!username || !password) {
         return res.status(400).json({
-            message: `Signup: Please provide a valid username and password`
+            message: `Signup: Please provide a valid username and password.`
         });
     }
 
@@ -62,7 +62,7 @@ router.post('/login', (req, res, next) => {
 
     if (!username || !password) {
         return res.status(400).json({
-            message: `Login: Please provide a valid username and password`
+            message: `Login: Please provide a valid username and password.`
         });
     }
 
@@ -71,13 +71,13 @@ router.post('/login', (req, res, next) => {
         .then((user) => {
             if (!user || user.length < 1) {
                 return res.status(404).json({
-                    message: `Login: Cannot find user ${username}`
+                    message: `Login: Cannot find user ${username}.`
                 });
             }
             bcrypt.compare(req.body.password, user.password, (err, checkResult) => {
                 if (err) {
                     return res.status(401).json({
-                        message: 'Login: Authentication failed'
+                        message: 'Login: Authentication failed.'
                     });
                 }
                 if (checkResult) {
@@ -86,12 +86,12 @@ router.post('/login', (req, res, next) => {
                     };
                     const token = jwt.sign(payload, process.env.JWT_SECRET);
                     return res.status(200).json({
-                        message: 'Login: Authentication successful',
+                        message: 'Login: Authentication successful.',
                         token: token
                     });
                 }
                 return res.status(401).json({
-                    message: 'Login: Authentication failed'
+                    message: 'Login: Authentication failed.'
                 });
             });
         })
