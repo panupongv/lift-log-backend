@@ -7,7 +7,7 @@ const supertest = require('supertest');
 const app = require('../app');
 const dbHandler = require('./db-handler');
 
-const authorise = require('../routes/authorisation');
+const authorise = require('../routes/authorisation').authorise;
 
 
 beforeAll(async () => await dbHandler.connect());
@@ -28,7 +28,7 @@ describe('Authorisation Middleware', () => {
     const validStatusCode = 200;
     const validResponse = { message: 'OK' };
 
-    app.get(mockRouteTemplate, authorise(), (req, res) => {
+    app.get(mockRouteTemplate, authorise, (req, res) => {
         res.status(validStatusCode).json(validResponse);
     });
 

@@ -26,14 +26,14 @@ describe('POST /auth/signup', () => {
 
             User.find().then((users) => {
                 expect(users.length).toBe(1);
-                expect(users[0].username).toMatch(requestBody.username);
+                expect(users[0].username).toEqual(requestBody.username);
             });
         });
     })
 
     describe('given a signup request with missing username or password', () => {
         test('should return a 400 - Bad Request response and create no records', async () => {
-            const expectedMessage = { message: `Signup: Please provide a valid username and password` };
+            const expectedMessage = { message: `Signup: Please provide a valid username and password.` };
 
             const noUsernameResponse = await supertest(app).post('/api/auth/signup').send({ password: 'password' });
             expect(noUsernameResponse.statusCode).toBe(400);
@@ -44,7 +44,6 @@ describe('POST /auth/signup', () => {
             expect(JSON.parse(noPasswordResponse.text)).toMatchObject(expectedMessage);
 
             User.find().then((users) => {
-                console.log(`Database Content: ${users}`);
                 expect(users.length).toBe(0);
             });
         });
@@ -81,7 +80,7 @@ describe('POST /auth/signup', () => {
 describe('POST /auth/login', () => {
     describe('given a login request with an existing username and a matching password', () => {
         test('should return a 200 - OK response along with a signed JWT Token', async () => {
-            const expectedMessage = { message: 'Login: Authentication successful' };
+            const expectedMessage = { message: 'Login: Authentication successful.' };
             
             const username = 'username';
             const password = 'password';
@@ -100,13 +99,13 @@ describe('POST /auth/login', () => {
 
             expect(response.status).toBe(200);
             expect(responseBody.token).toBeDefined();
-            expect(responseBody.message).toMatch(expectedMessage.message);
+            expect(responseBody.message).toEqual(expectedMessage.message);
         });
     });
 
     describe('given a login request with an existing username but an invalid password', () => {
         test('should return a 401 - Authentication failed with no token attached to the response', async () => {
-            const expectedMessage = { message: 'Login: Authentication failed' };
+            const expectedMessage = { message: 'Login: Authentication failed.' };
             
             const username = 'username';
             const password = 'password';
@@ -126,25 +125,25 @@ describe('POST /auth/login', () => {
 
             expect(response.status).toBe(401);
             expect(responseBody.token).toBeUndefined();
-            expect(responseBody.message).toMatch(expectedMessage.message);
+            expect(responseBody.message).toEqual(expectedMessage.message);
         });
     });
 
     describe('given a login request with missing username or password', () => {
         test('should return a 400 - Bad Request with no token attached to the response', async () => {
-            const expectedMessage = { message: 'Login: Please provide a valid username and password' };
+            const expectedMessage = { message: 'Login: Please provide a valid username and password.' };
 
             const noUsernameResponse = await supertest(app).post('/api/auth/login').send({ password: 'password' });
             const noUsernameResponseBody = JSON.parse(noUsernameResponse.text);
             expect(noUsernameResponse.statusCode).toBe(400);
             expect(noUsernameResponseBody.token).toBeUndefined();
-            expect(noUsernameResponseBody.message).toMatch(expectedMessage.message);
+            expect(noUsernameResponseBody.message).toEqual(expectedMessage.message);
 
             const noPasswordResponse = await supertest(app).post('/api/auth/login').send({ username: 'username' });
             const noPasswordResponseBody = JSON.parse(noPasswordResponse.text);
             expect(noPasswordResponse.statusCode).toBe(400);
             expect(noPasswordResponseBody.token).toBeUndefined();
-            expect(noPasswordResponseBody.message).toMatch(expectedMessage.message);
+            expect(noPasswordResponseBody.message).toEqual(expectedMessage.message);
         });
     });
 
@@ -153,7 +152,7 @@ describe('POST /auth/login', () => {
             const username = 'username';
             const password = 'password';
 
-            const expectedMessage = { message: `Login: Cannot find user ${username}` };
+            const expectedMessage = { message: `Login: Cannot find user ${username}.` };
 
             const response = await supertest(app).post('/api/auth/login').send({
                 username: username,
@@ -162,7 +161,7 @@ describe('POST /auth/login', () => {
             const responseBody = JSON.parse(response.text);
             expect(response.status).toBe(404);
             expect(responseBody.token).toBeUndefined();
-            expect(responseBody.message).toMatch(expectedMessage.message);
+            expect(responseBody.message).toEqual(expectedMessage.message);
         });
     });
 });
