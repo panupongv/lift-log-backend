@@ -9,7 +9,6 @@ const Exercise = require("../models/user").Exercise;
 
 router.get('/', authorise, (req, res) => {
     const username = req.params.username;
-
     User.findOne({
         'username': username,
     }).then((user) => {
@@ -19,7 +18,9 @@ router.get('/', authorise, (req, res) => {
                 exercises: user.exercises
             });
         }
-        return res.status(404).json({ message: `Get Exercises: User ${username} not found` });
+        return res.status(404).json({
+            message: `Get Exercises: User ${username} not found`
+        });
     }).catch((err) => {
         console.log(err);
         return res.status(500).json({
@@ -42,7 +43,6 @@ router.post('/', authorise, (req, res) => {
     User.findOne({ 'username': username })
         .exec()
         .then((user) => {
-
             if (!user) {
                 return res.status(400).json({
                     message: `Create Exercise: Cannot find user ${username}`
@@ -53,6 +53,7 @@ router.post('/', authorise, (req, res) => {
                     message: `Create Exercise: exercise ${exerciseName} already exist`
                 });
             }
+
             const newExercise = new Exercise({ name: exerciseName });
             user.exercises.push(newExercise);
             user.save()
@@ -114,6 +115,7 @@ router.put('/:exerciseId', authorise, (req, res) => {
                 _id: user.exercises[updateIndex]._id,
                 name: user.exercises[updateIndex].name
             };
+            
             user.exercises[updateIndex].name = exerciseName;
             user.save()
                 .then((user) => {
