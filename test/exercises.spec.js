@@ -63,7 +63,7 @@ describe('GET /api/:username/exercises', () => {
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(200);
-            expect(responseBody.message).toMatch(expectedResponse.message);
+            expect(responseBody.message).toEqual(expectedResponse.message);
             assertExerciseListEqualsNameList(responseBody.exercises, expectedResponse.exerciseNames);
         });
     });
@@ -82,7 +82,7 @@ describe('GET /api/:username/exercises', () => {
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(404);
-            expect(responseBody.message).toMatch(expectedResponse.message);
+            expect(responseBody.message).toEqual(expectedResponse.message);
             expect(responseBody.exercises).toBeUndefined();
         });
     });
@@ -120,7 +120,7 @@ describe('POST /api/:username/exercises', () => {
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(201);
-            expect(responseBody.createdExercise.name).toMatch(expectedResponse.createdExerciseName);
+            expect(responseBody.createdExercise.name).toEqual(expectedResponse.createdExerciseName);
             assertExerciseListEqualsNameList(responseBody.exercises, expectedResponse.exerciseNames);
         });
     });
@@ -137,7 +137,7 @@ describe('POST /api/:username/exercises', () => {
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
-            expect(responseBody.message).toMatch(expectedResponse.message);
+            expect(responseBody.message).toEqual(expectedResponse.message);
             expect(responseBody.exercises).toBeUndefined();
             expect(responseBody.createdExercise).toBeUndefined();
         });
@@ -160,7 +160,7 @@ describe('POST /api/:username/exercises', () => {
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
-            expect(responseBody.message).toMatch(expectedResponse.message);
+            expect(responseBody.message).toEqual(expectedResponse.message);
             expect(responseBody.exercises).toBeUndefined();
             expect(responseBody.createdExercise).toBeUndefined();
         });
@@ -192,7 +192,7 @@ describe('POST /api/:username/exercises', () => {
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
-            expect(responseBody.message).toMatch(expectedResponse.message);
+            expect(responseBody.message).toEqual(expectedResponse.message);
         });
     });
 });
