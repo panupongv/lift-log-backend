@@ -74,7 +74,7 @@ describe('GET /api/:username/exercises', () => {
 
             const expectedResponse = {
                 message: `Get Exercises: User ${username} not found.`
-            }
+            };
 
             const response = await supertest(app)
                 .get(routeTemplate.replace(':username', username))
@@ -154,7 +154,7 @@ describe('POST /api/:username/exercises', () => {
 
             const expectedResponse = {
                 message: `Create Exercise: Cannot find user ${username}.`
-            }
+            };
 
             const response = await supertest(app)
                 .post(routeTemplate.replace(':username', username))
