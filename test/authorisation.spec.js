@@ -1,7 +1,5 @@
 
-//const dotenv = require('dotenv');
 require('dotenv/config');
-const path = require('path');
 
 const jwt = require("jsonwebtoken");
 const supertest = require('supertest');
@@ -9,8 +7,7 @@ const supertest = require('supertest');
 const app = require('../app');
 const dbHandler = require('./db-handler');
 
-const User = require('../models/user').User;
-const authorise = require('../routes/authorisation');
+const authorise = require('../routes/authorisation').authorise;
 
 
 beforeAll(async () => await dbHandler.connect());
@@ -31,7 +28,7 @@ describe('Authorisation Middleware', () => {
     const validStatusCode = 200;
     const validResponse = { message: 'OK' };
 
-    app.get(mockRouteTemplate, authorise(), (req, res) => {
+    app.get(mockRouteTemplate, authorise, (req, res) => {
         res.status(validStatusCode).json(validResponse);
     });
 
