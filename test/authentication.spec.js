@@ -70,7 +70,6 @@ describe('POST /auth/signup', () => {
             expect(JSON.parse(response.text)).toMatchObject(expectedMessage);
 
             User.find().then((users) => {
-                console.log(`Database Content: ${users}`);
                 expect(users.length).toBe(1);
             })
         });
