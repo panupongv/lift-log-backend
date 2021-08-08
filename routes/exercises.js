@@ -46,7 +46,7 @@ router.post('/', authorise, (req, res) => {
             if (!user) {
                 return res.status(400).json({
                     message: `Create Exercise: Cannot find user ${username}.`
-                })
+                });
             }
             if (user.exercises && user.exercises.some(exercise => exercise.name === exerciseName)) {
                 return res.status(400).json({
@@ -154,7 +154,7 @@ router.delete('/:exerciseId', authorise, (req, res) => {
             if (!user) {
                 return res.status(400).json({
                     message: `Delete Exercise: Cannot find user ${username}.`
-                })
+                });
             }
             if (!user.exercises.map(exercise => exercise._id).includes(exerciseId)) {
                 return res.status(400).json({
