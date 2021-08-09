@@ -36,7 +36,7 @@ router.post('/', authorise, (req, res) => {
 
     if (!exerciseName) {
         return res.status(400).json({
-            message: `Create Exercise: Please provide an exercise name`
+            message: `Create Exercise: Please provide an exercise name.`
         });
     }
 
@@ -57,11 +57,11 @@ router.post('/', authorise, (req, res) => {
             const newExercise = new Exercise({ name: exerciseName });
             user.exercises.push(newExercise);
             user.save()
-                .then((user) => {
+                .then((result) => {
                     return res.status(201).json({
                         message: 'Create Exercise: Success.',
                         createdExercise: newExercise,
-                        exercises: user.exercises
+                        exercises: result.exercises
                     });
                 })
                 .catch((err) => {

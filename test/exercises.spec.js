@@ -130,7 +130,7 @@ describe('POST /api/:username/exercises', () => {
     describe('given no exercise name in the request body', () => {
         it('should return 400 - Bad request with just an info message (no exercise name)', async () => {
             const expectedResponse = {
-                message: 'Create Exercise: Please provide an exercise name'
+                message: 'Create Exercise: Please provide an exercise name.'
             };
 
             const response = await supertest(app)
