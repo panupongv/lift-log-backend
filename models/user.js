@@ -8,6 +8,7 @@ const sessionSchema = mongoose.Schema({
     name: { type: String, require: true },    
     date: { type: Date, require: true },
     location: { type: String, default: '' },
+    workouts: { type: [], default: []}
 });
 
 const userSchema = mongoose.Schema({
