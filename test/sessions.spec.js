@@ -52,6 +52,103 @@ const expectSessionsEqual = (expected, received) => {
 };
 
 
+describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
+    const routeTemplate = '/api/:username/sessions/?start={start}&limit={limit}';
+
+    // Valid case
+    // insert records
+    // test multiple windows
+
+    describe('given a username without user record', () => {
+        it('should return 400 - Bad request with no resulting sessions (user not found)', async () => {
+            const username = 'test_username';
+
+            const expectedResponse = {
+                message: `Get Sessions: User ${username} not found.`
+            };
+
+            const response = await supertest(app)
+                .get(routeTemplate.replace(':username', username)
+                    .replace('{start}', '3')
+                    .replace('{limit}', '5'))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+        });
+    });
+
+    describe('given a request query with missing start or limit parameters', () => {
+        it('should return 400 - Bad request with no resulting sessions (missing parameter(s))', async () => {
+            const username = 'test_username';
+
+            const expectedResponse = {
+                message: `Get Sessions: Missing query parameter(s).`
+            };
+
+            const routeNoStart = '/api/:username/sessions/?limit={limit}'
+            const responseNoStart = await supertest(app)
+                .get(routeNoStart.replace(':username', username)
+                    .replace('{limit}', '5'))
+                .send();
+            const responseNoStartBody = JSON.parse(responseNoStart.text);
+
+            expect(responseNoStart.statusCode).toBe(400);
+            expect(responseNoStartBody.message).toEqual(expectedResponse.message);
+            
+            sinon.assert.calledOnce(authorisationStub);
+            authorisationStub.reset();
+            authorisationStub.callsArg(2);
+
+            const routeNoLimit = '/api/:username/sessions/?start={start}'
+            const responseNoLimit = await supertest(app)
+                .get(routeNoLimit.replace(':username', username)
+                    .replace('{endDate}', '2021-07-01Z'))
+                .send();
+            const responseNoLimitBody = JSON.parse(responseNoLimit.text);
+
+            expect(responseNoLimit.statusCode).toBe(400);
+            expect(responseNoLimitBody.message).toEqual(expectedResponse.message);
+        });
+    });
+
+    describe('given query parameter(s) that is not an integer', () => {
+        it('should return 400 - Bad request with no resulting sessions (invalid format)', async () => {
+            const username = 'test_username';
+
+            const expectedResponse = {
+                message: `Get Sessions: Please provide 'start' and 'limit' as integers.`
+            };
+
+            const responseBadStart = await supertest(app)
+                .get(routeTemplate.replace(':username', username)
+                    .replace('{start}', 'not integer')
+                    .replace('{limit}', '10'))
+                .send();
+            const responseBadStartBody = JSON.parse(responseBadStart.text);
+
+            expect(responseBadStart.statusCode).toBe(400);
+            expect(responseBadStartBody.message).toEqual(expectedResponse.message);
+
+            sinon.assert.calledOnce(authorisationStub);
+            authorisationStub.reset();
+            authorisationStub.callsArg(2);
+
+            const responseBadLimit = await supertest(app)
+                .get(routeTemplate.replace(':username', username)
+                    .replace('{start}', '3')
+                    .replace('{limit}', '-3'))
+                .send();
+            const responseBadLimitBody = JSON.parse(responseBadLimit.text);
+
+            expect(responseBadLimit.statusCode).toBe(400);
+            expect(responseBadLimitBody.message).toEqual(expectedResponse.message);
+        });
+    });
+});
+
+
 describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endDate}', () => {
     const routeTemplate = '/api/:username/sessions/dates/?startDate={startDate}&endDate={endDate}';
 
@@ -186,13 +283,13 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
             authorisationStub.callsArg(2);
 
             const noStartDateRoute = '/api/:username/sessions/dates/?endDate={endDate}'
-            const responsenoStartDate = await supertest(app)
+            const responseNoStartDate = await supertest(app)
                 .get(noStartDateRoute.replace(':username', username)
                     .replace('{endDate}', '2021-07-01Z'))
                 .send();
-            const responsenoStartDateBody = JSON.parse(responsenoStartDate.text);
-            expect(responsenoStartDate.statusCode).toBe(400);
-            expect(responsenoStartDateBody.message).toEqual(expectedResponse.message);
+            const responseNoStartDateBody = JSON.parse(responseNoStartDate.text);
+            expect(responseNoStartDate.statusCode).toBe(400);
+            expect(responseNoStartDateBody.message).toEqual(expectedResponse.message);
         });
     });
 });
@@ -407,4 +504,3 @@ describe('POST /api/:username/sessions', () => {
         });
     });
 });
-

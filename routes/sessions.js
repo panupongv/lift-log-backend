@@ -7,17 +7,53 @@ const User = require("../models/user").User;
 const Session = require("../models/user").Session;
 
 
+const isValidStartLimit = (stringValue) => {
+    return !isNaN(stringValue) &&
+        Number.isInteger(parseFloat(stringValue)) &&
+        parseFloat(stringValue) >= 0;
+};
+
 const isValidDateFormat = (dateString) => {
     var regEx = /^\d{4}-\d{2}-\d{2}Z$/;
     return dateString.match(regEx) !== null;
 };
 
 
-//router.get('/', authorise, (req, res) => {
-//    const username = req.params.username;
-//    const start = req.query.start;
-//    const limit = req.query.limit;
-//});
+router.get('/', authorise, (req, res) => {
+    const username = req.params.username;
+    const start = req.query.start;
+    const limit = req.query.limit;
+
+    if (!start || !limit) {
+        return res.status(400).json({
+            message: `Get Sessions: Missing query parameter(s).`
+        });
+    }
+
+    if (!isValidStartLimit(start) || !isValidStartLimit(limit)) {
+        return res.status(400).json({
+            message: `Get Sessions: Please provide 'start' and 'limit' as integers.`
+        });
+    }
+
+    User.findOne({ username: username })
+        .then((user) => {
+            if (!user) {
+                return res.status(400).json({
+                    message: `Get Sessions: User ${username} not found.`
+                });
+            }
+
+            // Query
+
+        })
+        .catch((err) => {
+            console.log(`err: ${err}`);
+            return res.status(500).json({
+                err: err
+            });
+        });
+});
 
 
 router.get('/dates', authorise, (req, res) => {
@@ -53,7 +89,6 @@ router.get('/dates', authorise, (req, res) => {
                 { $sort: { 'sessions.date': 1 } },
                 { $group: { _id: '$username', sessions: { $push: '$sessions' } } },
             ]).then((result) => {
-                console.log(result);
                 const sessions = result.length ? result[0].sessions : [];
                 return res.status(200).json({
                     message: 'Get Sessions by Date: Success.',
@@ -136,5 +171,3 @@ router.post('/', authorise, (req, res) => {
 
 
 module.exports = router;
-
-
