@@ -41,7 +41,6 @@ router.post('/', authorise, (req, res) => {
     }
 
     User.findOne({ 'username': username }, { exercises: 1 })
-        .exec()
         .then((user) => {
             if (!user) {
                 return res.status(400).json({
@@ -92,7 +91,6 @@ router.put('/:exerciseId', authorise, (req, res) => {
     }
 
     User.findOne({ 'username': username }, { exercises: 1 })
-        .exec()
         .then((user) => {
 
             if (!user) {
@@ -146,7 +144,6 @@ router.delete('/:exerciseId', authorise, (req, res) => {
     const exerciseId = req.params.exerciseId;
 
     User.findOne({ 'username': username }, { exercises: 1 })
-        .exec()
         .then((user) => {
 
             if (!user) {
