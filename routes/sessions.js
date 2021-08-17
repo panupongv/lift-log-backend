@@ -21,12 +21,12 @@ const isValidDateFormat = (dateString) => {
 
 router.get('/', authorise, (req, res) => {
     const username = req.params.username;
-    const start = req.query.start;
+    const start = req.query.start ? req.query.start : '0';
     const limit = req.query.limit;
 
-    if (!start || !limit) {
+    if (!limit) {
         return res.status(400).json({
-            message: `Get Sessions: Missing query parameter(s).`
+            message: `Get Sessions: Missing the parameter limit.`
         });
     }
 
@@ -36,6 +36,9 @@ router.get('/', authorise, (req, res) => {
         });
     }
 
+    const startInt = parseInt(start);
+    const limitInt = parseInt(limit);
+
     User.findOne({ username: username })
         .then((user) => {
             if (!user) {
@@ -44,7 +47,29 @@ router.get('/', authorise, (req, res) => {
                 });
             }
 
-            // Query
+            User.aggregate([
+                { $match: {username: username}},
+                { $project: { username: 1, sessions: 1 } },
+                { $unwind: '$sessions' },
+                { $sort: { 'sessions.date': -1 } },
+                { $skip: startInt },
+                { $limit: limitInt },
+                { $group: { _id: '$username', sessions: { $push: '$sessions' } } },
+            ])
+            .then((result) => {
+                const sessions = (result && result.length) ? result[0].sessions : [];
+                return res.status(200).json({
+                    messsage: `Get Sessions: Success.`,
+                    sessions: sessions
+                });
+            })
+            .catch((err) => {
+                console.log(`err: ${err}`);
+                return res.status(500).json({
+                    err: err
+                });
+            });
+
 
         })
         .catch((err) => {
@@ -89,7 +114,7 @@ router.get('/dates', authorise, (req, res) => {
                 { $sort: { 'sessions.date': 1 } },
                 { $group: { _id: '$username', sessions: { $push: '$sessions' } } },
             ]).then((result) => {
-                const sessions = result.length ? result[0].sessions : [];
+                const sessions = (result && result.length) ? result[0].sessions : [];
                 return res.status(200).json({
                     message: 'Get Sessions by Date: Success.',
                     sessions: sessions

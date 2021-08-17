@@ -29,6 +29,11 @@ afterEach(async () => {
 
 afterAll(async () => await dbHandler.closeDatabase());
 
+const midTestCaseStubReset = () => {
+    sinon.assert.calledOnce(authorisationStub);
+    authorisationStub.reset();
+    authorisationStub.callsArg(2);
+};
 
 const addDays = (date, days) => {
     let result = new Date(date);
@@ -40,7 +45,6 @@ const addDays = (date, days) => {
 const expectDateStringsEqual = (expected, received) => {
     const expectedDate = new Date(expected);
     const receivedDate = new Date(received);
-
     expect(receivedDate).toEqual(expectedDate);
 };
 
@@ -55,9 +59,105 @@ const expectSessionsEqual = (expected, received) => {
 describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
     const routeTemplate = '/api/:username/sessions/?start={start}&limit={limit}';
 
-    // Valid case
-    // insert records
-    // test multiple windows
+    describe('given a valid username and query parameters', () => {
+        it('should return 200 - Ok with the sessions paginated according to the query', async () => {
+            const username = 'test_username';
+            const password = 'test_password';
+            const sessions = [...Array(20).keys()].map((x) => {
+                const date = new Date(`2021-08-${x + 1}Z`);
+                return new Session({
+                    name: `session ${x + 1}`,
+                    location: `gym ${x + 1}`,
+                    date: date
+                })
+            });
+
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: sessions
+            });
+            user.save();
+
+            const sortedSessions = sessions.reverse();
+
+            // Normal case with start and limit
+
+            const start = 5;
+            const limit = 8;
+
+            const expectedResponseNormalCase = {
+                messsage: `Get Sessions: Success.`,
+                sessions: sortedSessions.slice(start, start + limit)
+            };
+
+            const responseNormalCase = await supertest(app)
+                .get(routeTemplate.replace(':username', username)
+                    .replace('{start}', start.toString())
+                    .replace('{limit}', limit.toString()))
+                .send();
+            const responseNormalCaseBody = JSON.parse(responseNormalCase.text);
+
+            expect(responseNormalCase.statusCode).toBe(200);
+            expect(responseNormalCaseBody.message).toEqual(expectedResponseNormalCase.message);
+            expect(responseNormalCaseBody.sessions.length).toBe(limit);
+            responseNormalCaseBody.sessions.forEach((session, index) => {
+                expectSessionsEqual(expectedResponseNormalCase.sessions[index], session);
+            });
+
+
+            // Query window beyond last element
+
+            midTestCaseStubReset();
+
+            const expectedResponseWindowBeyondLastElement = {
+                messsage: `Get Sessions: Success.`,
+                sessions: sortedSessions.slice(start)
+            };
+
+            const limitBeyondLastElement = sessions.length * 2;
+
+            const responseWindowBeyondLastElement = await supertest(app)
+                .get(routeTemplate.replace(':username', username)
+                    .replace('{start}', start.toString())
+                    .replace('{limit}', limitBeyondLastElement.toString()))
+                .send();
+            const responseWindowBeyondLastElementBody = JSON.parse(responseWindowBeyondLastElement.text);
+
+            expect(responseWindowBeyondLastElement.statusCode).toBe(200);
+            expect(responseWindowBeyondLastElementBody.message).toEqual(expectedResponseWindowBeyondLastElement.message);
+            expect(responseWindowBeyondLastElementBody.sessions.length).toBe(expectedResponseWindowBeyondLastElement.sessions.length);
+            responseWindowBeyondLastElementBody.sessions.forEach((session, index) => {
+                expectSessionsEqual(expectedResponseWindowBeyondLastElement.sessions[index], session);
+            });
+
+
+            // No start provided, defaulted to 0
+
+            midTestCaseStubReset();
+
+            const limitNoStart = 10;
+
+            const expectedResponseNoStart = {
+                messsage: `Get Sessions: Success.`,
+                sessions: sortedSessions.slice(0, limitNoStart)
+            };
+
+            const routeNoStart = '/api/:username/sessions/?limit={limit}';
+            const responseNoStart = await supertest(app)
+                .get(routeNoStart.replace(':username', username)
+                    .replace('{limit}', limitNoStart.toString()))
+                .send();
+            const responseNoStartBody = JSON.parse(responseNoStart.text);
+
+            expect(responseNoStart.statusCode).toBe(200);
+            expect(responseNoStartBody.message).toEqual(expectedResponseNoStart.message);
+            expect(responseNoStartBody.sessions.length).toBe(limitNoStart);
+            responseNoStartBody.sessions.forEach((session, index) => {
+                expectSessionsEqual(expectedResponseNoStart.sessions[index], session);
+            });
+        });
+    });
 
     describe('given a username without user record', () => {
         it('should return 400 - Bad request with no resulting sessions (user not found)', async () => {
@@ -76,40 +176,40 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
 
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.sessions).toBeUndefined();
         });
     });
 
-    describe('given a request query with missing start or limit parameters', () => {
+    describe('given a request query with missing limit parameters (start is defaulted to 0)', () => {
         it('should return 400 - Bad request with no resulting sessions (missing parameter(s))', async () => {
             const username = 'test_username';
 
             const expectedResponse = {
-                message: `Get Sessions: Missing query parameter(s).`
+                message: `Get Sessions: Missing the parameter limit.`
             };
-
-            const routeNoStart = '/api/:username/sessions/?limit={limit}'
-            const responseNoStart = await supertest(app)
-                .get(routeNoStart.replace(':username', username)
-                    .replace('{limit}', '5'))
-                .send();
-            const responseNoStartBody = JSON.parse(responseNoStart.text);
-
-            expect(responseNoStart.statusCode).toBe(400);
-            expect(responseNoStartBody.message).toEqual(expectedResponse.message);
-            
-            sinon.assert.calledOnce(authorisationStub);
-            authorisationStub.reset();
-            authorisationStub.callsArg(2);
 
             const routeNoLimit = '/api/:username/sessions/?start={start}'
             const responseNoLimit = await supertest(app)
                 .get(routeNoLimit.replace(':username', username)
-                    .replace('{endDate}', '2021-07-01Z'))
+                    .replace('{start}', '2'))
                 .send();
             const responseNoLimitBody = JSON.parse(responseNoLimit.text);
 
             expect(responseNoLimit.statusCode).toBe(400);
             expect(responseNoLimitBody.message).toEqual(expectedResponse.message);
+            expect(responseNoLimitBody.sessions).toBeUndefined();
+
+            midTestCaseStubReset();
+
+            const routeNoParams = '/api/:username/sessions/'
+            const responseNoParams = await supertest(app)
+                .get(routeNoParams.replace(':username', username))
+                .send();
+            const responseNoParamsBody = JSON.parse(responseNoParams.text);
+
+            expect(responseNoParams.statusCode).toBe(400);
+            expect(responseNoParamsBody.message).toEqual(expectedResponse.message);
+            expect(responseNoParamsBody.sessions).toBeUndefined();
         });
     });
 
@@ -130,10 +230,9 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
 
             expect(responseBadStart.statusCode).toBe(400);
             expect(responseBadStartBody.message).toEqual(expectedResponse.message);
+            expect(responseBadStartBody.sessions).toBeUndefined();
 
-            sinon.assert.calledOnce(authorisationStub);
-            authorisationStub.reset();
-            authorisationStub.callsArg(2);
+            midTestCaseStubReset();
 
             const responseBadLimit = await supertest(app)
                 .get(routeTemplate.replace(':username', username)
@@ -144,6 +243,7 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
 
             expect(responseBadLimit.statusCode).toBe(400);
             expect(responseBadLimitBody.message).toEqual(expectedResponse.message);
+            expect(responseBadLimitBody.sessions).toBeUndefined();
         });
     });
 });
@@ -223,6 +323,7 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
 
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.sessions).toBeUndefined();
         });
     });
 
@@ -243,10 +344,9 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
 
             expect(responseInvalidEndDate.statusCode).toBe(400);
             expect(responseInvalidEndDateBody.message).toEqual(expectedResponse.message);
+            expect(responseInvalidEndDateBody.sessions).toBeUndefined();
 
-            sinon.assert.calledOnce(authorisationStub);
-            authorisationStub.reset();
-            authorisationStub.callsArg(2);
+            midTestCaseStubReset();
 
             const responseInvalidStartDate = await supertest(app)
                 .get(routeTemplate.replace(':username', username)
@@ -257,6 +357,7 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
 
             expect(responseInvalidStartDate.statusCode).toBe(400);
             expect(responseInvalidStartDateBody.message).toEqual(expectedResponse.message);
+            expect(responseInvalidStartDateBody.sessions).toBeUndefined();
         });
     });
 
@@ -277,10 +378,9 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
 
             expect(responseNoEndDate.statusCode).toBe(400);
             expect(responseNoEndDateBody.message).toEqual(expectedResponse.message);
+            expect(responseNoEndDateBody.sessions).toBeUndefined();
 
-            sinon.assert.calledOnce(authorisationStub);
-            authorisationStub.reset();
-            authorisationStub.callsArg(2);
+            midTestCaseStubReset();
 
             const noStartDateRoute = '/api/:username/sessions/dates/?endDate={endDate}'
             const responseNoStartDate = await supertest(app)
@@ -290,6 +390,7 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
             const responseNoStartDateBody = JSON.parse(responseNoStartDate.text);
             expect(responseNoStartDate.statusCode).toBe(400);
             expect(responseNoStartDateBody.message).toEqual(expectedResponse.message);
+            expect(responseNoStartDateBody.sessions).toBeUndefined();
         });
     });
 });
@@ -463,9 +564,7 @@ describe('POST /api/:username/sessions', () => {
             expect(responseWithoutName.statusCode).toBe(400);
             expect(responseWithoutNameBody.message).toEqual(expectedNoNameResponse.message);
 
-            sinon.assert.calledOnce(authorisationStub);
-            authorisationStub.reset();
-            authorisationStub.callsArg(2);
+            midTestCaseStubReset();
 
             const expectedNoDateResponse = {
                 message: `Create Session: Missing body parameter 'date'.`
