@@ -29,11 +29,13 @@ afterEach(async () => {
 
 afterAll(async () => await dbHandler.closeDatabase());
 
-const midTestCaseStubReset = () => {
+
+const midTestStubReset = () => {
     sinon.assert.calledOnce(authorisationStub);
     authorisationStub.reset();
     authorisationStub.callsArg(2);
 };
+
 
 const addDays = (date, days) => {
     let result = new Date(date);
@@ -108,7 +110,7 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
 
             // Query window beyond last element
 
-            midTestCaseStubReset();
+            midTestStubReset();
 
             const expectedResponseWindowBeyondLastElement = {
                 messsage: `Get Sessions: Success.`,
@@ -134,7 +136,7 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
 
             // No start provided, defaulted to 0
 
-            midTestCaseStubReset();
+            midTestStubReset();
 
             const limitNoStart = 10;
 
@@ -199,7 +201,7 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
             expect(responseNoLimitBody.message).toEqual(expectedResponse.message);
             expect(responseNoLimitBody.sessions).toBeUndefined();
 
-            midTestCaseStubReset();
+            midTestStubReset();
 
             const routeNoParams = '/api/:username/sessions/'
             const responseNoParams = await supertest(app)
@@ -232,7 +234,7 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
             expect(responseBadStartBody.message).toEqual(expectedResponse.message);
             expect(responseBadStartBody.sessions).toBeUndefined();
 
-            midTestCaseStubReset();
+            midTestStubReset();
 
             const responseBadLimit = await supertest(app)
                 .get(routeTemplate.replace(':username', username)
@@ -346,7 +348,7 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
             expect(responseInvalidEndDateBody.message).toEqual(expectedResponse.message);
             expect(responseInvalidEndDateBody.sessions).toBeUndefined();
 
-            midTestCaseStubReset();
+            midTestStubReset();
 
             const responseInvalidStartDate = await supertest(app)
                 .get(routeTemplate.replace(':username', username)
@@ -380,7 +382,7 @@ describe('GET /api/:username/sessions/dates/?startDate={startDate}&endDate={endD
             expect(responseNoEndDateBody.message).toEqual(expectedResponse.message);
             expect(responseNoEndDateBody.sessions).toBeUndefined();
 
-            midTestCaseStubReset();
+            midTestStubReset();
 
             const noStartDateRoute = '/api/:username/sessions/dates/?endDate={endDate}'
             const responseNoStartDate = await supertest(app)
@@ -564,7 +566,7 @@ describe('POST /api/:username/sessions', () => {
             expect(responseWithoutName.statusCode).toBe(400);
             expect(responseWithoutNameBody.message).toEqual(expectedNoNameResponse.message);
 
-            midTestCaseStubReset();
+            midTestStubReset();
 
             const expectedNoDateResponse = {
                 message: `Create Session: Missing body parameter 'date'.`

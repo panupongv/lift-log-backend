@@ -48,7 +48,7 @@ router.get('/', authorise, (req, res) => {
             }
 
             User.aggregate([
-                { $match: {username: username}},
+                { $match: { username: username } },
                 { $project: { username: 1, sessions: 1 } },
                 { $unwind: '$sessions' },
                 { $sort: { 'sessions.date': -1 } },
@@ -56,19 +56,19 @@ router.get('/', authorise, (req, res) => {
                 { $limit: limitInt },
                 { $group: { _id: '$username', sessions: { $push: '$sessions' } } },
             ])
-            .then((result) => {
-                const sessions = (result && result.length) ? result[0].sessions : [];
-                return res.status(200).json({
-                    messsage: `Get Sessions: Success.`,
-                    sessions: sessions
+                .then((result) => {
+                    const sessions = (result && result.length) ? result[0].sessions : [];
+                    return res.status(200).json({
+                        messsage: `Get Sessions: Success.`,
+                        sessions: sessions
+                    });
+                })
+                .catch((err) => {
+                    console.log(`err: ${err}`);
+                    return res.status(500).json({
+                        err: err
+                    });
                 });
-            })
-            .catch((err) => {
-                console.log(`err: ${err}`);
-                return res.status(500).json({
-                    err: err
-                });
-            });
 
 
         })
@@ -191,6 +191,62 @@ router.post('/', authorise, (req, res) => {
             return res.status(500).json({
                 err: err
             });
+        });
+});
+
+
+router.put('/:sessionId', authorise, (req, res) => {
+    const username = req.params.username;
+    const sessionId = req.params.sessionId;
+    const newName = req.body.name;
+    const newDate = req.body.date;
+    const newLocation = req.body.location;
+
+    if (!newName && !newDate && !newLocation) {
+        return res.status(400).json({
+            message: `Update Session: No fields to update.`
+        });
+    }
+
+    if (newDate && !isValidDateFormat(newDate)) {
+        return res.status(400).json({
+            message: `Update Session: Invalid date format.`
+        });
+    }
+
+    User.findOne({ username: username })
+        .then((user) => {
+            if (!user) {
+                return res.status(400).json({
+                    message: `Update Session: User ${username} not found.`
+                });
+            }
+
+            const fieldToUpdate = {};
+
+            if (newName) fieldToUpdate['sessions.$.name'] = newName;
+            if (newDate) fieldToUpdate['sessions.$.date'] = newDate;
+            if (newLocation) fieldToUpdate['sessions.$.location'] = newLocation;
+
+            User.findOneAndUpdate({ username: username, 'sessions._id': sessionId }, fieldToUpdate, { new: true })
+                .then((result) => {
+                    if (!result) {
+                        return res.status(400).json({
+                            message: `Update Session: Session ${sessionId} not found.`
+                        });
+                    }
+
+                    const sessions = result.sessions;
+                    const updatedSession = sessions.find((session) => session._id.equals(sessionId));
+
+                    console.log(updatedSession);
+
+                    return res.status(200).json({
+                        message: `Update Session: Success.`,
+                        updatedSession: updatedSession,
+                        sessions: sessions
+                    });
+                });
         });
 });
 
