@@ -4,6 +4,7 @@ const sinon = require('sinon');
 const dbHandler = require('./db-handler');
 const { User, Session } = require('../models/user');
 const authorisation = require('../routes/authorisation');
+const mongoose = require('mongoose');
 
 let app;
 let authorisationStub;
@@ -605,3 +606,256 @@ describe('POST /api/:username/sessions', () => {
         });
     });
 });
+
+
+describe('PUT /api/:username/sessions/:sessionId', () => {
+    const routeTemplate = '/api/:username/sessions/:sessionId';
+
+    describe('given a valid username, sessionId and a body with at least one out of three parameters', () => {
+
+        let SESSIONID;
+
+        const username = 'test_username';
+        const password = 'test_password';
+
+        const originalName = 'og_name';
+        const originalDate = '2021-01-01Z';
+        const originalLocation = 'og_location';
+
+        const session = new Session({
+            name: originalName,
+            date: originalDate,
+            location: originalLocation
+        })
+
+        const fillerSession = new Session({
+            name: 'another_name',
+            date: '2021-12-31Z',
+            location: 'another_location'
+        });
+
+        beforeEach(async () => {
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: [session, fillerSession]
+            })
+            const saveResult = await user.save();
+            SESSIONID = saveResult.sessions[0]._id;
+        });
+
+        afterEach(() => {
+            dbHandler.clearDatabase();
+        })
+
+        it('should update the session record and return 200 - Ok with the updated and the session list (updated name)', async () => {
+            const newName = 'new_name';
+            const requestBody = { name: newName };
+
+            const updatedSession = {
+                name: newName,
+                date: originalDate,
+                location: originalLocation
+            };
+
+            const expectedResponse = {
+                message: 'Update Session: Success.',
+                updatedSession: updatedSession,
+                sessions: [updatedSession, fillerSession]
+            }
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', SESSIONID))
+                .send(requestBody);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expectSessionsEqual(expectedResponse.updatedSession, responseBody.updatedSession);
+            expectedResponse.sessions.forEach((session, index) => {
+                expectSessionsEqual(session, responseBody.sessions[index]);
+            });
+        });
+
+        it('should update the session record and return 200 - Ok with the updated and the session list (updated date)', async () => {
+            const newDate = '2021-06-22Z';
+            const requestBody = { date: newDate };
+
+            const updatedSession = {
+                name: originalName,
+                date: newDate,
+                location: originalLocation
+            };
+
+            const expectedResponse = {
+                message: 'Update Session: Success.',
+                updatedSession: updatedSession,
+                sessions: [updatedSession, fillerSession]
+            }
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', SESSIONID))
+                .send(requestBody);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expectSessionsEqual(expectedResponse.updatedSession, responseBody.updatedSession);
+            expectedResponse.sessions.forEach((session, index) => {
+                expectSessionsEqual(session, responseBody.sessions[index]);
+            });
+        });
+
+        it('should update the session record and return 200 - Ok with the updated and the session list (updated name)', async () => {
+            const newLocation = 'new_location';
+            const requestBody = { location: newLocation };
+
+            const updatedSession = {
+                name: originalName,
+                date: originalDate,
+                location: newLocation
+            };
+
+            const expectedResponse = {
+                message: 'Update Session: Success.',
+                updatedSession: updatedSession,
+                sessions: [updatedSession, fillerSession]
+            }
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', SESSIONID))
+                .send(requestBody);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expectSessionsEqual(expectedResponse.updatedSession, responseBody.updatedSession);
+            expectedResponse.sessions.forEach((session, index) => {
+                expectSessionsEqual(session, responseBody.sessions[index]);
+            });
+        });
+    });
+
+    describe('given a request body without field available for edit', () => {
+        it('should return 400 - Bad request with an error message (no fields) and no resulting sessions', async () => {
+            const username = 'test_username';
+
+            const expectedResponse = {
+                message: `Update Session: No fields to update.`
+            }
+
+            const emptyBody = {};        
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                .send(emptyBody);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+
+        });
+    });
+
+    describe('given a request body containing an invalid date', () => {
+        it('should return 400 - Bad request with an error message (invalid date) and no resulting sessions', async () => {
+            const username = 'test_username';
+
+            const expectedResponse = {
+                message: `Update Session: Invalid date format.`
+            }
+
+            const bodyWithInvalidDate = {
+                name: 'ok_name',
+                date: '2021/02/1'
+            };        
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                .send(bodyWithInvalidDate);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.updatedSession).toBeUndefined();
+            expect(responseBody.sessions).toBeUndefined();
+        });
+    });
+
+
+    describe('given a username without a user record', () => {
+        it('should return 400 - Bad request with an error message (no user) and no resulting sessions', async () => {
+            const username = 'test_username';
+
+            const expectedResponse = {
+                message: `Update Session: User ${username} not found.`
+            }
+
+            const requestBody = {
+                name: 'ok_name',
+                date: '2021-02-28Z',
+                location: 'some_location'
+            };        
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                .send(requestBody);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.updatedSession).toBeUndefined();
+            expect(responseBody.sessions).toBeUndefined();
+        });
+    });
+
+
+    describe('given a valid username but non existing sessionId', () => {
+        it('should return 400 - Bad request with an error message (session not found) and no resulting sessions', async () => {
+            const username = 'test_username';
+            const password = 'test_password';
+
+            const user = new User({
+                username: username,
+                password: password
+            });
+            await user.save();
+
+            const sessionId = mongoose.Types.ObjectId(); //'non-existing-session';
+
+            const expectedResponse = {
+                message: `Update Session: Session ${sessionId} not found.`
+            }
+
+            const requestBody = {
+                name: 'ok_name',
+                date: '2021-02-28Z',
+                location: 'some_location'
+            };        
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId))
+                .send(requestBody);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.updatedSession).toBeUndefined();
+            expect(responseBody.sessions).toBeUndefined();
+        });
+    });
+});
+
+
+
+

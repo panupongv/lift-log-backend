@@ -222,13 +222,13 @@ router.put('/:sessionId', authorise, (req, res) => {
                 });
             }
 
-            const fieldToUpdate = {};
+            const fieldsToUpdate = {};
 
-            if (newName) fieldToUpdate['sessions.$.name'] = newName;
-            if (newDate) fieldToUpdate['sessions.$.date'] = newDate;
-            if (newLocation) fieldToUpdate['sessions.$.location'] = newLocation;
+            if (newName) fieldsToUpdate['sessions.$.name'] = newName;
+            if (newDate) fieldsToUpdate['sessions.$.date'] = newDate;
+            if (newLocation) fieldsToUpdate['sessions.$.location'] = newLocation;
 
-            User.findOneAndUpdate({ username: username, 'sessions._id': sessionId }, fieldToUpdate, { new: true })
+            User.findOneAndUpdate({ username: username, 'sessions._id': sessionId }, fieldsToUpdate, { new: true })
                 .then((result) => {
                     if (!result) {
                         return res.status(400).json({
@@ -238,9 +238,6 @@ router.put('/:sessionId', authorise, (req, res) => {
 
                     const sessions = result.sessions;
                     const updatedSession = sessions.find((session) => session._id.equals(sessionId));
-
-                    console.log(updatedSession);
-
                     return res.status(200).json({
                         message: `Update Session: Success.`,
                         updatedSession: updatedSession,
