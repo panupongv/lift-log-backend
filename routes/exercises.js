@@ -9,24 +9,24 @@ const Exercise = require("../models/user").Exercise;
 
 router.get('/', authorise, (req, res) => {
     const username = req.params.username;
-    User.findOne({
-        'username': username,
-    }).then((user) => {
-        if (user) {
-            return res.status(200).json({
-                message: 'Get Exercises: Success.',
-                exercises: user.exercises
+    User.findOne({ 'username': username }, { exercises: 1 })
+        .then((user) => {
+            if (user) {
+                return res.status(200).json({
+                    message: 'Get Exercises: Success.',
+                    exercises: user.exercises
+                });
+            }
+            return res.status(404).json({
+                message: `Get Exercises: User ${username} not found.`
             });
-        }
-        return res.status(404).json({
-            message: `Get Exercises: User ${username} not found.`
-        });
-    }).catch((err) => {
-        console.log(err);
-        return res.status(500).json({
-            error: err
         })
-    });
+        .catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            })
+        });
 });
 
 
@@ -40,8 +40,7 @@ router.post('/', authorise, (req, res) => {
         });
     }
 
-    User.findOne({ 'username': username })
-        .exec()
+    User.findOne({ 'username': username }, { exercises: 1 })
         .then((user) => {
             if (!user) {
                 return res.status(400).json({
@@ -91,8 +90,7 @@ router.put('/:exerciseId', authorise, (req, res) => {
         });
     }
 
-    User.findOne({ 'username': username })
-        .exec()
+    User.findOne({ 'username': username }, { exercises: 1 })
         .then((user) => {
 
             if (!user) {
@@ -112,11 +110,9 @@ router.put('/:exerciseId', authorise, (req, res) => {
             }
 
             const updateIndex = user.exercises.map(exercise => exercise._id).indexOf(exerciseId);
-            const originalExercise = {
-                _id: user.exercises[updateIndex]._id,
-                name: user.exercises[updateIndex].name
-            };
-            
+            const originalExercise = {};
+            Object.assign(originalExercise, user.exercises[updateIndex]._doc);
+
             user.exercises[updateIndex].name = exerciseName;
             user.save()
                 .then((user) => {
@@ -147,8 +143,7 @@ router.delete('/:exerciseId', authorise, (req, res) => {
     const username = req.params.username;
     const exerciseId = req.params.exerciseId;
 
-    User.findOne({ 'username': username })
-        .exec()
+    User.findOne({ 'username': username }, { exercises: 1 })
         .then((user) => {
 
             if (!user) {
@@ -156,13 +151,16 @@ router.delete('/:exerciseId', authorise, (req, res) => {
                     message: `Delete Exercise: Cannot find user ${username}.`
                 });
             }
-            if (!user.exercises.map(exercise => exercise._id).includes(exerciseId)) {
+
+            const exerciseIds = user.exercises.map(exercise => exercise._id);
+            const deleteIndex = exerciseIds.indexOf(exerciseId);
+
+            if (deleteIndex === -1) {
                 return res.status(400).json({
                     message: `Delete Exercise: exerciseId ${exerciseId} does not exist.`
                 });
             }
 
-            const deleteIndex = user.exercises.map(exercise => exercise._id).indexOf(exerciseId);
             const deletedExercise = user.exercises[deleteIndex];
             user.exercises.splice(deleteIndex, 1);
 
