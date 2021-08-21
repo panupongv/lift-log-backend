@@ -661,7 +661,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             const expectedResponse = {
                 message: 'Update Session: Success.',
                 updatedSession: updatedSession,
-                sessions: [updatedSession, fillerSession]
             }
 
             const response = await supertest(app)
@@ -674,9 +673,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             expect(response.statusCode).toBe(200);
             expect(responseBody.message).toEqual(expectedResponse.message);
             expectSessionsEqual(expectedResponse.updatedSession, responseBody.updatedSession);
-            expectedResponse.sessions.forEach((session, index) => {
-                expectSessionsEqual(session, responseBody.sessions[index]);
-            });
         });
 
         it('should update the session record and return 200 - Ok with the updated and the session list (updated date)', async () => {
@@ -692,7 +688,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             const expectedResponse = {
                 message: 'Update Session: Success.',
                 updatedSession: updatedSession,
-                sessions: [updatedSession, fillerSession]
             }
 
             const response = await supertest(app)
@@ -705,9 +700,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             expect(response.statusCode).toBe(200);
             expect(responseBody.message).toEqual(expectedResponse.message);
             expectSessionsEqual(expectedResponse.updatedSession, responseBody.updatedSession);
-            expectedResponse.sessions.forEach((session, index) => {
-                expectSessionsEqual(session, responseBody.sessions[index]);
-            });
         });
 
         it('should update the session record and return 200 - Ok with the updated and the session list (updated name)', async () => {
@@ -723,7 +715,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             const expectedResponse = {
                 message: 'Update Session: Success.',
                 updatedSession: updatedSession,
-                sessions: [updatedSession, fillerSession]
             }
 
             const response = await supertest(app)
@@ -736,9 +727,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             expect(response.statusCode).toBe(200);
             expect(responseBody.message).toEqual(expectedResponse.message);
             expectSessionsEqual(expectedResponse.updatedSession, responseBody.updatedSession);
-            expectedResponse.sessions.forEach((session, index) => {
-                expectSessionsEqual(session, responseBody.sessions[index]);
-            });
         });
     });
 
@@ -750,7 +738,7 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
                 message: `Update Session: No fields to update.`
             }
 
-            const emptyBody = {};        
+            const emptyBody = {};
             const response = await supertest(app)
                 .put(routeTemplate
                     .replace(':username', username)
@@ -760,7 +748,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
 
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
-
         });
     });
 
@@ -775,7 +762,7 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             const bodyWithInvalidDate = {
                 name: 'ok_name',
                 date: '2021/02/1'
-            };        
+            };
             const response = await supertest(app)
                 .put(routeTemplate
                     .replace(':username', username)
@@ -786,7 +773,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
             expect(responseBody.updatedSession).toBeUndefined();
-            expect(responseBody.sessions).toBeUndefined();
         });
     });
 
@@ -803,7 +789,7 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
                 name: 'ok_name',
                 date: '2021-02-28Z',
                 location: 'some_location'
-            };        
+            };
             const response = await supertest(app)
                 .put(routeTemplate
                     .replace(':username', username)
@@ -814,7 +800,6 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
             expect(responseBody.updatedSession).toBeUndefined();
-            expect(responseBody.sessions).toBeUndefined();
         });
     });
 
@@ -840,7 +825,7 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
                 name: 'ok_name',
                 date: '2021-02-28Z',
                 location: 'some_location'
-            };        
+            };
             const response = await supertest(app)
                 .put(routeTemplate
                     .replace(':username', username)
@@ -851,11 +836,121 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
             expect(responseBody.updatedSession).toBeUndefined();
-            expect(responseBody.sessions).toBeUndefined();
         });
     });
 });
 
+
+describe('DELETE /api/:username/sessions/:sessionId', () => {
+    const routeTemplate = '/api/:username/sessions/:sessionId';
+
+    describe('given a username and a session ID', () => {
+        it('should delete the target session then return 200 - Ok with the deleted session', async () => {
+            const username = 'test_username';
+            const password = 'test_password';
+
+            const originalName = 'og_name';
+            const originalDate = '2021-01-01Z';
+            const originalLocation = 'og_location';
+
+            const session = new Session({
+                name: originalName,
+                date: originalDate,
+                location: originalLocation
+            })
+
+            const fillerSession = new Session({
+                name: 'another_name',
+                date: '2021-12-31Z',
+                location: 'another_location'
+            });
+
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: [session, fillerSession]
+            });
+
+            const savedUser = await user.save();
+            const sessionId = savedUser.sessions[0]._id;
+
+            const expectedResponse = {
+                message: 'Delete Session: Success.',
+                deletedSession: session,
+            };
+
+            const response = await supertest(app)
+                .delete(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expectSessionsEqual(expectedResponse.deletedSession, responseBody.deletedSession);
+
+            User.findOne({ username: username })
+                .then((user) => {
+                    expect(user.sessions.length).toBe(1);
+                    expectSessionsEqual(fillerSession, user.sessions[0]);
+                })
+        });
+    });
+
+    // No user
+
+    describe('given a username with user record', () => {
+        it('should return 400 - Bad request without the deleted session record', async () => {
+            const username = 'test_username';
+            
+            const expectedResponse = {
+                message: `Delete Session: User ${username} not found.`
+            };
+
+            const response = await supertest(app)
+                .delete(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                .send();
+            const responseBody = JSON.parse(response.text);
+            
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.deletedSession).toBeUndefined();
+        });
+    });
+
+    // No session
+    describe('given a valid username but a non existing session ID', () => {
+        it('should return 400 - Bad request without the deleted session record', async () => {
+            const username = 'test_username';
+            const password = 'test_password';
+
+            const user = new User({
+                username: username,
+                password: password
+            });
+            user.save();
+
+            const testSessionId = mongoose.Types.ObjectId();
+            const expectedResponse = {
+                message: `Delete Session: Session ${testSessionId} not found.`
+            };
+
+            const response = await supertest(app)
+                .delete(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', testSessionId))
+                .send();
+            const responseBody = JSON.parse(response.text);
+            
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.deletedSession).toBeUndefined();
+        });
+    });
+});
 
 
 

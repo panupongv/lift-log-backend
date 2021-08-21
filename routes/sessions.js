@@ -49,7 +49,7 @@ router.get('/', authorise, (req, res) => {
 
             User.aggregate([
                 { $match: { username: username } },
-                { $project: { username: 1, sessions: 1 } },
+                { $project: { username: 1, sessions: { name: 1, date: 1, location: 1 } } },
                 { $unwind: '$sessions' },
                 { $sort: { 'sessions.date': -1 } },
                 { $skip: startInt },
@@ -108,7 +108,7 @@ router.get('/dates', authorise, (req, res) => {
 
             User.aggregate([
                 { $match: { username: username } },
-                { $project: { username: 1, sessions: 1 } },
+                { $project: { username: 1, sessions: { name: 1, date: 1, location: 1 } } },
                 { $unwind: '$sessions' },
                 { $match: { 'sessions.date': { $gte: new Date(startDate), $lte: new Date(endDate) } } },
                 { $sort: { 'sessions.date': 1 } },
@@ -236,14 +236,51 @@ router.put('/:sessionId', authorise, (req, res) => {
                         });
                     }
 
-                    const sessions = result.sessions;
-                    const updatedSession = sessions.find((session) => session._id.equals(sessionId));
+                    const updatedSession = result.sessions.find((session) => session._id.equals(sessionId));
                     return res.status(200).json({
                         message: `Update Session: Success.`,
                         updatedSession: updatedSession,
-                        sessions: sessions
                     });
                 });
+        });
+});
+
+
+router.delete('/:sessionId', authorise, (req, res) => {
+    const username = req.params.username;
+    const sessionId = req.params.sessionId;
+
+    User.findOne(
+        { username: username },
+        )
+        .then((user) => {
+            if (!user) {
+                return res.status(400).json({
+                    message: `Delete Session: User ${username} not found.`
+                });
+            }
+
+            const deleteIndex = user.sessions.findIndex((session) => session._id.equals(sessionId));
+
+            if (deleteIndex === -1) {
+                return res.status(400).json({
+                    message: `Delete Session: Session ${sessionId} not found.`
+                });
+            }
+
+            const deletedSession = user.sessions[deleteIndex];
+            user.sessions.pull(sessionId);
+            user.save();
+            return res.status(200).json({
+                message: 'Delete Session: Success.',
+                deletedSession: deletedSession
+            });
+        })
+        .catch((err) => {
+            console.log(`err: ${err}`);
+            return res.status(500).json({
+                err: err
+            });
         });
 });
 
