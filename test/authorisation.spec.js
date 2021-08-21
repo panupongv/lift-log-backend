@@ -33,7 +33,6 @@ describe('Authorisation Middleware', () => {
     });
 
     describe('given a valid authorisation token that matches the target username in params', () => {
-
         it(`should proceed to the 'next()' method (which returns ${validStatusCode} and ${JSON.stringify(validResponse)})`, async () => {
             const validPayload = { username: username };
             const validToken = jwt.sign(validPayload, process.env.JWT_SECRET);
