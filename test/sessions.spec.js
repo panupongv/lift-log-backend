@@ -462,7 +462,7 @@ describe('POST /api/:username/sessions', () => {
 
     describe('given a valid username with complete request body (location excluded)', () => {
         it('should create the record on database then return 201 - Create along with the record (location autopopulated as \'\')', async () => {
-            const username = 'test_username';
+            const username = 'test_username2';
             const password = 'test_password';
             const user = new User({
                 username: username,
