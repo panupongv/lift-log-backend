@@ -1,0 +1,36 @@
+{
+  "name": "lift-log-backend",
+  "version": "1.0.0",
+  "description": "REST API for Lift Log App",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest --runInBand ./test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/panupongv/lift-log-backend.git"
+  },
+  "author": "panupongv",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/panupongv/lift-log-backend/issues"
+  },
+  "homepage": "https://github.com/panupongv/lift-log-backend#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.13.2",
+    "sinon": "^11.1.2",
+    "supertest": "^6.1.4"
+  },
+  "devDependencies": {
+    "jest": "^27.0.6",
+    "mongodb-memory-server": "^7.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}
