@@ -7,6 +7,17 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user').User;
 
+
+const isUsernameLengthInRange = (username) => {
+    return username.length >= 4 && username.length <= 20;
+};
+
+const isUsernameUsingValidCharacters = (username) => {
+    const pattern = "^[a-zA-Z0-9_]*$";
+    return (Boolean)(username.match(pattern));
+};
+
+
 router.post('/signup', (req, res, next) => {
     const username = req.body.username;
     const password = req.body.password;
@@ -17,8 +28,19 @@ router.post('/signup', (req, res, next) => {
         });
     }
 
+    if (!isUsernameLengthInRange(username)) {
+        return res.status(400).json({
+            message: `Signup: Username length must be between 4 and 20.`
+        });
+    }
+
+    if (!isUsernameUsingValidCharacters(username)) {
+        return res.status(400).json({
+            message: `Signup: Username can only contain alphanumerical characters and underscore.`
+        });
+    }
+
     User.find({ username: username })
-        .exec()
         .then((user) => {
             if (user.length >= 1) {
                 return res.status(409).json({
@@ -66,7 +88,6 @@ router.post('/login', (req, res, next) => {
     }
 
     User.findOne({ username: username })
-        .exec()
         .then((user) => {
             if (!user || user.length < 1) {
                 return res.status(404).json({
