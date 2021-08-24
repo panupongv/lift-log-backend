@@ -125,7 +125,10 @@ describe('POST /auth/signup', () => {
 
 describe('POST /auth/login', () => {
     describe('given a login request with an existing username and a matching password', () => {
+
         it('should return a 200 - OK response along with a signed JWT Token', async () => {
+            process.env.JWT_SECRET = 'temp-key-for-testing';
+
             const expectedMessage = { message: 'Login: Authentication successful.' };
 
             const username = 'username';
