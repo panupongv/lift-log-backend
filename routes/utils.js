@@ -4,7 +4,7 @@ const isValidWeightAndReps = (stringValue) => {
 }
 
 const isValidExerciseContent = (contentString) => {
-    if (contentString === "") return true;
+    if (contentString === '') return true;
     try {
         const sets = contentString.split(';');
         return sets.every((set) => {
