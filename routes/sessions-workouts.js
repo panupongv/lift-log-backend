@@ -79,4 +79,86 @@ router.post('/:sessionId', authorise, (req, res) => {
 });
 
 
+router.put('/:sessionId/:workoutId', authorise, (req, res) => {
+    const username = req.params.username;
+    const sessionId = req.params.sessionId;
+    const workoutId = req.params.workoutId;
+    const content = req.body.content;
+    const exerciseId = req.body.exerciseId;
+
+
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return res.status(400).json({
+            message: `Update Workout: Invalid sessionId format.`
+        });
+    }
+
+    if (!exerciseId && !content) {
+        return res.status(400).json({
+            message: `Update Workout: Missing request body parameters.`
+        });
+    }
+
+    if (exerciseId && !mongoose.Types.ObjectId.isValid(exerciseId)) {
+        return res.status(400).json({
+            message: `Update Workout: Please provide a valid exerciseId.`
+        });
+    }
+
+    if (content && !isValidExerciseContent(content)) {
+        return res.status(400).json({
+            message: `Update Workout: Please provide a valid exercise content.`
+        });
+    }
+
+    User.findOne({ username: username })
+        .then((user) => {
+
+            if (!user) {
+                return res.status(400).json({
+                    message: `Update Workout: User ${username} not found.`
+                });
+            }
+
+            const sessionElementLabel = 'sessionElement';
+            const workoutElementLabel = 'workoutElement';
+
+            const sessionArrayFilter = {}; sessionArrayFilter[`${sessionElementLabel}._id`] = sessionId;
+            const workoutArrayFilter = {}; workoutArrayFilter[`${workoutElementLabel}._id`] = workoutId;
+            const filters = [sessionArrayFilter, workoutArrayFilter];
+
+            const fieldsToUpdate = {};
+            if (exerciseId) fieldsToUpdate[`sessions.$[${sessionElementLabel}].workouts.$[${workoutElementLabel}].exerciseId`] = exerciseId;
+            if (content) fieldsToUpdate[`sessions.$[${sessionElementLabel}].workouts.$[${workoutElementLabel}].content`] = content;
+
+            User.findOneAndUpdate(
+                {
+                    username: username,
+                    'sessions._id': sessionId,
+                    'sessions.workouts._id': workoutId
+                },
+                { $set: fieldsToUpdate },
+                {
+                    arrayFilters: filters,
+                    new: true
+                })
+                .then((result) => {
+                    return res.status(200).json({
+                        message: 'Update Workout: Success.'
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    return res.status(500).json({
+                        error: err
+                    });
+                });
+        }).catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            });
+        });
+});
+
 module.exports = router;
