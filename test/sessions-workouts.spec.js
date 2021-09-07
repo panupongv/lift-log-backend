@@ -43,7 +43,7 @@ const expectWorkoutsEqual = (received, expected) => {
 
 
 
-describe('POST /api/sessions/:sessionId', () => {
+describe('POST /api/:username/sessions/:sessionId', () => {
 
     const routeTemplate = '/api/:username/sessions/:sessionId';
 
@@ -266,6 +266,74 @@ describe('POST /api/sessions/:sessionId', () => {
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
             expect(responseBody.createdWorkout).toBeUndefined();
+        });
+    });
+});
+
+
+describe('PUT /api/:username/sessions/:sessionId/:workoutId', () => {
+    const routeTemplate = '/api/:username/sessions/:sessionId/:workoutId';
+
+    describe('given a valid username, sessionsId, workoutId and request body (containing exerciseId and content)', () => {
+        it('should update the workout record and return 200 - Ok response with the updated workout fields', async () => {
+            const username = 'test_username';
+            const password = 'test_password';
+
+            const workout = new Workout({
+                exerciseId: mongoose.Types.ObjectId(),
+                content: '1x10;1x10;1x10;1x10'
+            });
+            const session = new Session({
+                name: 'session-name',
+                date: '2021-08-30Z',
+                workouts: [workout]
+            });
+
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: [session]
+            });
+            const saveResult = await user.save();
+            const sessionId = saveResult.sessions[0]._id;
+            const workoutId = saveResult.sessions[0].workouts[0]._id;
+
+            const expectedResponse = {
+                message: 'Update Workout: Success.',
+                workout: {
+                    exerciseId: mongoose.Types.ObjectId(),
+                    content: '99x9;99x9;100x5'
+                }
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', workoutId))
+                .send(expectedResponse.workout);
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.updatedFields.exerciseId.toString()).toEqual(expectedResponse.workout.exerciseId.toString());
+            expect(responseBody.updatedFields.content).toEqual(expectedResponse.workout.content);
+
+            User.find({
+                username: username,
+                'sessions._id': sessionId,
+                'sessions.workouts._id': workoutId
+            })
+                .then((result) => {
+                    const resultUser = result[0];
+                    const session = resultUser.sessions[0];
+                    const workout = session.workouts[0];
+
+                    expect(resultUser.sessions.length).toBe(1);
+                    expect(session.workouts.length).toBe(1);
+                    expect(workout.exerciseId.toString()).toEqual(expectedResponse.workout.exerciseId.toString());
+                    expect(workout.content).toEqual(expectedResponse.workout.content);
+                });
         });
     });
 });
