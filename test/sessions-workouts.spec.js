@@ -40,9 +40,6 @@ const expectWorkoutsEqual = (received, expected) => {
 };
 
 
-
-
-
 describe('POST /api/:username/sessions/:sessionId', () => {
 
     const routeTemplate = '/api/:username/sessions/:sessionId';
@@ -334,6 +331,185 @@ describe('PUT /api/:username/sessions/:sessionId/:workoutId', () => {
                     expect(workout.exerciseId.toString()).toEqual(expectedResponse.workout.exerciseId.toString());
                     expect(workout.content).toEqual(expectedResponse.workout.content);
                 });
+        });
+    });
+
+    describe('given a username without a user record', () => {
+        it('should not update any record and return 400 - Bad request (no user)', async () => {
+            const username = 'test_username';
+            const sessionId = mongoose.Types.ObjectId();
+            const workoutId = mongoose.Types.ObjectId();
+            const exerciseId = mongoose.Types.ObjectId();
+            const content = '40x10;40x10;40x10';
+
+            const expectedResponse = {
+                message: `Update Workout: User ${username} not found.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', workoutId))
+                .send({
+                    exerciseId: exerciseId,
+                    content: content
+                });
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.updatedFields).toBeUndefined();
+        });
+    });
+
+    describe('given a valid username but a sessionId-workoutId pair that does not exist', () => {
+        it('should not update any record and return 400 - Bad request (no session)', async () => {
+            const username = 'test_username';
+            const password = 'test_password';
+            const exerciseId = mongoose.Types.ObjectId();
+            const content = '40x10;40x10;40x10';
+
+            const session = new Session({
+                name: 'test_session',
+                date: '2021-09-02Z'
+            })
+
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: [session]
+            });
+            await user.save();
+
+            const randomWorkoutId = mongoose.Types.ObjectId();
+
+            const sessionId = user.sessions[0]._id;
+
+            const expectedResponse = {
+                message: `Update Workout: Cannot find session-workout ${sessionId}/${randomWorkoutId}.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', randomWorkoutId))
+                .send({
+                    exerciseId: exerciseId,
+                    content: content
+                });
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.createdWorkout).toBeUndefined();
+        });
+    });
+
+    describe('given a sessionId in an invalid format', () => {
+        it('should not update any record and return 400 - Bad request (invalid sessionId)', async () => {
+            const username = 'test_username';
+            const sessionId = 'not in valid format';
+            const exerciseId = mongoose.Types.ObjectId();
+            const content = '40x10;40x10;40x10';
+
+            const expectedResponse = {
+                message: `Update Workout: Invalid sessionId format.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', mongoose.Types.ObjectId()))
+                .send({
+                    exerciseId: exerciseId,
+                    content: content
+                });
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.createdWorkout).toBeUndefined();
+        });
+    });
+
+    describe('given a request body without a request body', () => {
+        it('should not update any record and return 400 - Bad request (missing exerciseId)', async () => {
+            const username = 'test_username';
+            const sessionId = mongoose.Types.ObjectId();
+
+            const expectedResponse = {
+                message: `Update Workout: Missing request body parameters.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', mongoose.Types.ObjectId()))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.createdWorkout).toBeUndefined();
+        });
+    });
+
+    describe('given a request body with an invalid exerciseId', () => {
+        it('should not update any record and return 400 - Bad request (missing exerciseId)', async () => {
+            const username = 'test_username';
+            const sessionId = mongoose.Types.ObjectId();
+            const exerciseId = 'not in valid format';
+
+            const expectedResponse = {
+                message: `Update Workout: Please provide a valid exerciseId.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', mongoose.Types.ObjectId()))
+                .send({
+                    exerciseId: exerciseId,
+                    content: '40x10;40x10;40x10'
+                });
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.createdWorkout).toBeUndefined();
+        });
+    });
+
+    describe('given a request body with an invalid exercise content', () => {
+        it('should not put any record and return 400 - Bad request (invalid exercise content)', async () => {
+            const username = 'test_username';
+            const sessionId = mongoose.Types.ObjectId();
+            const exerciseId = mongoose.Types.ObjectId();
+            const content = 'not weightxreps;weightxreps;weightxreps';
+
+            const expectedResponse = {
+                message: `Update Workout: Please provide a valid exercise content.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', mongoose.Types.ObjectId()))
+                .send({
+                    exerciseId: exerciseId,
+                    content: content
+                });
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.createdWorkout).toBeUndefined();
         });
     });
 });

@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest --runInBand ./test"
+    "test": "jest --runInBand --collectCoverage ./test"
   },
   "repository": {
     "type": "git",
