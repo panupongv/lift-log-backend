@@ -152,7 +152,7 @@ router.put('/:sessionId/:workoutId', authorise, (req, res) => {
 
                     if (!result) {
                         return res.status(400).json({
-                            message: `Update Workout: Cannot find ${sessionId}/${workoutId}.`
+                            message: `Update Workout: Cannot find session-workout ${sessionId}/${workoutId}.`
                         });
                     }
 
