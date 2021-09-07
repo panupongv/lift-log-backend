@@ -86,7 +86,6 @@ router.put('/:sessionId/:workoutId', authorise, (req, res) => {
     const content = req.body.content;
     const exerciseId = req.body.exerciseId;
 
-
     if (!mongoose.Types.ObjectId.isValid(sessionId)) {
         return res.status(400).json({
             message: `Update Workout: Invalid sessionId format.`
@@ -128,8 +127,15 @@ router.put('/:sessionId/:workoutId', authorise, (req, res) => {
             const filters = [sessionArrayFilter, workoutArrayFilter];
 
             const fieldsToUpdate = {};
-            if (exerciseId) fieldsToUpdate[`sessions.$[${sessionElementLabel}].workouts.$[${workoutElementLabel}].exerciseId`] = exerciseId;
-            if (content) fieldsToUpdate[`sessions.$[${sessionElementLabel}].workouts.$[${workoutElementLabel}].content`] = content;
+            const updatedFields = {};
+            if (exerciseId) {
+                fieldsToUpdate[`sessions.$[${sessionElementLabel}].workouts.$[${workoutElementLabel}].exerciseId`] =
+                    updatedFields.exerciseId = exerciseId;
+            }
+            if (content || content === '') {
+                fieldsToUpdate[`sessions.$[${sessionElementLabel}].workouts.$[${workoutElementLabel}].content`] =
+                    updatedFields.content = content;
+            }
 
             User.findOneAndUpdate(
                 {
@@ -143,8 +149,16 @@ router.put('/:sessionId/:workoutId', authorise, (req, res) => {
                     new: true
                 })
                 .then((result) => {
+
+                    if (!result) {
+                        return res.status(400).json({
+                            message: `Update Workout: Cannot find ${sessionId}/${workoutId}.`
+                        });
+                    }
+
                     return res.status(200).json({
-                        message: 'Update Workout: Success.'
+                        message: 'Update Workout: Success.',
+                        updatedFields: updatedFields
                     });
                 })
                 .catch((err) => {
