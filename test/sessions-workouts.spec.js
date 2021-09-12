@@ -435,6 +435,35 @@ describe('PUT /api/:username/sessions/:sessionId/:workoutId', () => {
         });
     });
 
+    describe('given a workoutId in an invalid format', () => {
+        it('should not update any record and return 400 - Bad request (invalid workoutId)', async () => {
+            const username = 'test_username';
+            const sessionId = mongoose.Types.ObjectId();
+            const workoutId = 'not in valid format';
+            const exerciseId = mongoose.Types.ObjectId();
+            const content = '40x10;40x10;40x10';
+
+            const expectedResponse = {
+                message: `Update Workout: Invalid workoutId format.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', sessionId)
+                    .replace(':workoutId', workoutId))
+                .send({
+                    exerciseId: exerciseId,
+                    content: content
+                });
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.createdWorkout).toBeUndefined();
+        });
+    });
+
     describe('given a request body without a request body', () => {
         it('should not update any record and return 400 - Bad request (missing exerciseId)', async () => {
             const username = 'test_username';
