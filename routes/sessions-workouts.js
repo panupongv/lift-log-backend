@@ -92,6 +92,12 @@ router.put('/:sessionId/:workoutId', authorise, (req, res) => {
         });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(workoutId)) {
+        return res.status(400).json({
+            message: `Update Workout: Invalid workoutId format.`
+        });
+    }
+
     if (!exerciseId && !content) {
         return res.status(400).json({
             message: `Update Workout: Missing request body parameters.`
@@ -168,6 +174,73 @@ router.put('/:sessionId/:workoutId', authorise, (req, res) => {
                     });
                 });
         }).catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            });
+        });
+});
+
+
+router.delete('/:sessionId/:workoutId', authorise, (req, res) => {
+    const username = req.params.username;
+    const sessionId = req.params.sessionId;
+    const workoutId = req.params.workoutId;
+
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return res.status(400).json({
+            message: `Delete Workout: Invalid sessionId format.`
+        });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(workoutId)) {
+        return res.status(400).json({
+            message: `Delete Workout: Invalid workoutId format.`
+        });
+    }
+
+    User.findOne({ username: username })
+        .then((user) => {
+            if (!user) {
+                return res.status(400).json({
+                    message: `Delete Workout: User ${username} not found.`
+                });
+            }
+
+            const sessionElementLabel = 'sessionElement';
+            const sessionArrayFilter = {}; sessionArrayFilter[`${sessionElementLabel}._id`] = sessionId;
+            const filters = [sessionArrayFilter];
+            const elementToRemove = {}; elementToRemove[`sessions.$[${sessionElementLabel}].workouts`] = { _id: workoutId };
+
+            User.findOneAndUpdate(
+                {
+                    username: username,
+                    'sessions._id': sessionId,
+                    'sessions.workouts._id': workoutId
+                },
+                { $pull: elementToRemove },
+                {
+                    arrayFilters: filters,
+                })
+                .then((result) => {
+                    if (!result) {
+                        return res.status(400).json({
+                            message: `Delete Workout: Cannot find session-workout ${sessionId}/${workoutId}.`
+                        });
+                    }
+
+                    return res.status(200).json({
+                        message: `Delete Workout: Success.`
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    return res.status(500).json({
+                        error: err
+                    });
+                });
+        })
+        .catch((err) => {
             console.log(err);
             return res.status(500).json({
                 error: err
