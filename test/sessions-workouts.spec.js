@@ -52,16 +52,22 @@ describe('POST /api/:username/sessions/:sessionId', () => {
             const exercise = new Exercise({
                 name: 'some-exercise'
             });
+
             const session = new Session({
                 name: 'session-name',
                 date: '2021-08-30Z'
+            });
+
+            const placeHolderSession = new Session({
+                name: 'dontmatter',
+                date: '2021-04-22Z'
             });
 
             const user = new User({
                 username: username,
                 password: password,
                 exercises: [exercise],
-                sessions: [session]
+                sessions: [session, placeHolderSession]
             });
             const saveResult = await user.save();
             const sessionId = saveResult.sessions[0]._id;
@@ -95,9 +101,11 @@ describe('POST /api/:username/sessions/:sessionId', () => {
             })
                 .then((results) => {
                     expect(results.length).toBe(1);
-                    expect(results[0].sessions.length).toBe(1);
+                    expect(results[0].sessions.length).toBe(2);
                     expect(results[0].sessions[0].workouts.length).toBe(1);
                     expectWorkoutsEqual(results[0].sessions[0].workouts[0], expectedResponse.createdWorkout);
+
+                    expect(results[0].sessions[1].workouts.length).toBe(0);
                 });
         });
     });
