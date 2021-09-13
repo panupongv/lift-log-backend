@@ -10,6 +10,67 @@ const Workout = require("../models/user").Workout;
 const isValidExerciseContent = require('./utils').isValidExerciseContent;
 
 
+router.get('/:sessionId/:workoutId', authorise, (req, res) => {
+    const username = req.params.username;
+    const sessionId = req.params.sessionId;
+    const workoutId = req.params.workoutId;
+
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return res.status(400).json({
+            message: `Get Workout: Invalid sessionId format.`
+        });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(workoutId)) {
+        return res.status(400).json({
+            message: `Get Workout: Invalid workoutId format.`
+        });
+    }
+
+    User.findOne({ username: username })
+        .then((user) => {
+            if (!user) {
+                return res.status(400).json({
+                    message: `Get Workout: User ${username} not found.`
+                });
+            }
+
+            User.aggregate([
+                { $match: { username: 'user456' } },
+                { $project: { sessions: true } },
+                { $unwind: '$sessions' },
+                { $match: { 'sessions._id': mongoose.Types.ObjectId(sessionId) } },
+                { $unwind: '$sessions.workouts' },
+                { $match: { 'sessions.workouts._id': mongoose.Types.ObjectId(workoutId) } }
+            ])
+                .then((result) => {
+                    if (!result || result.length === 0) {
+                        return res.status(400).json({
+                            message: `Get Workout: Cannot find session-workout ${sessionId}/${workoutId}.`
+                        });
+                    }
+
+                    return res.status(200).json({
+                        message: 'Get Workout: Success.',
+                        session: result[0].sessions
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    return res.status(500).json({
+                        error: err
+                    });
+                });
+
+        }).catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            });
+        });
+});
+
+
 router.post('/:sessionId', authorise, (req, res) => {
     const username = req.params.username;
     const sessionId = req.params.sessionId;
