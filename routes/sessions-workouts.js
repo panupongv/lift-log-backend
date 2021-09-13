@@ -223,6 +223,7 @@ router.delete('/:sessionId/:workoutId', authorise, (req, res) => {
                     arrayFilters: filters,
                 })
                 .then((result) => {
+
                     if (!result) {
                         return res.status(400).json({
                             message: `Delete Workout: Cannot find session-workout ${sessionId}/${workoutId}.`
