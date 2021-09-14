@@ -40,8 +40,8 @@ const expectWorkoutsEqual = (received, expected) => {
 };
 
 
-describe('GET /api/:username/sessions/:sessionId/:workoutId', () => {
-    const routeTemplate = '/api/:username/sessions/:sessionId/:workoutId';
+describe('GET /api/:username/sessions/:sessionId/', () => {
+    const routeTemplate = '/api/:username/sessions/:sessionId';
 
     describe('given a valid username and a sessionId-workoutId pair that exist', () => {
         it('should return a 200 - Ok response with the information related to the session and workout', async () => {
@@ -77,22 +77,16 @@ describe('GET /api/:username/sessions/:sessionId/:workoutId', () => {
 
             const saveResult = await user.save();
             const sessionId = saveResult.sessions[0]._id;
-            const workoutId = saveResult.sessions[0].workouts[1]._id;
 
             const expectedResponse = {
-                message: 'Get Workout: Success.',
-                session: {
-                    location: session.location,
-                    date: session.date,
-                    workout: workout
-                }
+                message: 'Get Workouts: Success.',
+                session: session
             };
 
             const response = await supertest(app)
                 .get(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', sessionId)
-                    .replace(':workoutId', workoutId))
+                    .replace(':sessionId', sessionId))
                 .send();
             const responseBody = JSON.parse(response.text);
 
@@ -102,42 +96,39 @@ describe('GET /api/:username/sessions/:sessionId/:workoutId', () => {
             expect(responseBody.session.location).toEqual(expectedResponse.session.location);
             expect(new Date(responseBody.session.date)).toEqual(new Date(expectedResponse.session.date));
 
-            expect(responseBody.session.workout.content).toEqual(expectedResponse.session.workout.content);
-            expect(responseBody.session.workout.exerciseId.toString()).toEqual(expectedResponse.session.workout.exerciseId.toString());
+            for (var i = 0; i < responseBody.session.workouts.length; i++) {
+                expect(responseBody.session.workouts[i].content).toEqual(expectedResponse.session.workouts[i].content);
+                expect(responseBody.session.workouts[i].exerciseId.toString()).toEqual(expectedResponse.session.workouts[i].exerciseId.toString());
+            }
         });
     });
 
     describe('given a username without a user record', () => {
-        it('should not update any record and return 400 - Bad request (no user)', async () => {
+        it('should return 400 - Bad request (no user)', async () => {
             const username = 'test_username';
             const sessionId = mongoose.Types.ObjectId();
-            const workoutId = mongoose.Types.ObjectId();
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
 
             const expectedResponse = {
-                message: `Get Workout: User ${username} not found.`
+                message: `Get Workouts: User ${username} not found.`
             };
 
             const response = await supertest(app)
                 .get(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', sessionId)
-                    .replace(':workoutId', workoutId))
+                    .replace(':sessionId', sessionId))
                 .send();
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.session).toBeUndefined();
         });
     });
 
-    describe('given a valid username but a sessionId-workoutId pair that does not exist', () => {
-        it('should not update any record and return 400 - Bad request (no session)', async () => {
+    describe('given a valid username but a sessionId that does not exist', () => {
+        it('should return 400 - Bad request (no session)', async () => {
             const username = 'test_username';
             const password = 'test_password';
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
 
             const session = new Session({
                 name: 'test_session',
@@ -151,73 +142,44 @@ describe('GET /api/:username/sessions/:sessionId/:workoutId', () => {
             });
             await user.save();
 
-            const randomWorkoutId = mongoose.Types.ObjectId();
-
-            const sessionId = user.sessions[0]._id;
+            const sessionId = mongoose.Types.ObjectId();
 
             const expectedResponse = {
-                message: `Get Workout: Cannot find session-workout ${sessionId}/${randomWorkoutId}.`
+                message: `Get Workouts: Cannot find session ${sessionId}.`
             };
 
             const response = await supertest(app)
                 .get(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', sessionId)
-                    .replace(':workoutId', randomWorkoutId))
+                    .replace(':sessionId', sessionId))
                 .send();
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.session).toBeUndefined();
         });
     });
 
     describe('given a sessionId in an invalid format', () => {
-        it('should not update any record and return 400 - Bad request (invalid sessionId)', async () => {
+        it('should return 400 - Bad request (invalid sessionId)', async () => {
             const username = 'test_username';
             const sessionId = 'not in valid format';
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
 
             const expectedResponse = {
-                message: `Get Workout: Invalid sessionId format.`
+                message: `Get Workouts: Invalid sessionId format.`
             };
 
             const response = await supertest(app)
                 .get(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', sessionId)
-                    .replace(':workoutId', mongoose.Types.ObjectId()))
+                    .replace(':sessionId', sessionId))
                 .send();
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
-        });
-    });
-
-    describe('given a workoutId in an invalid format', () => {
-        it('should not update any record and return 400 - Bad request (invalid workoutId)', async () => {
-            const username = 'test_username';
-            const sessionId = mongoose.Types.ObjectId();
-            const workoutId = 'not in valid format';
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
-
-            const expectedResponse = {
-                message: `Get Workout: Invalid workoutId format.`
-            };
-
-            const response = await supertest(app)
-                .get(routeTemplate
-                    .replace(':username', username)
-                    .replace(':sessionId', sessionId)
-                    .replace(':workoutId', workoutId))
-                .send();
-            const responseBody = JSON.parse(response.text);
-
-            expect(response.statusCode).toBe(400);
-            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.session).toBeUndefined();
         });
     });
 });
@@ -801,8 +763,6 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
             const username = 'test_username';
             const sessionId = mongoose.Types.ObjectId();
             const workoutId = mongoose.Types.ObjectId();
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
 
             const expectedResponse = {
                 message: `Delete Workout: User ${username} not found.`
@@ -813,10 +773,7 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
                     .replace(':username', username)
                     .replace(':sessionId', sessionId)
                     .replace(':workoutId', workoutId))
-                .send({
-                    exerciseId: exerciseId,
-                    content: content
-                });
+                .send();
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
@@ -828,8 +785,6 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
         it('should not update any record and return 400 - Bad request (no session)', async () => {
             const username = 'test_username';
             const password = 'test_password';
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
 
             const session = new Session({
                 name: 'test_session',
@@ -856,10 +811,7 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
                     .replace(':username', username)
                     .replace(':sessionId', sessionId)
                     .replace(':workoutId', randomWorkoutId))
-                .send({
-                    exerciseId: exerciseId,
-                    content: content
-                });
+                .send();
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
@@ -871,8 +823,6 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
         it('should not update any record and return 400 - Bad request (invalid sessionId)', async () => {
             const username = 'test_username';
             const sessionId = 'not in valid format';
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
 
             const expectedResponse = {
                 message: `Delete Workout: Invalid sessionId format.`
@@ -883,10 +833,7 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
                     .replace(':username', username)
                     .replace(':sessionId', sessionId)
                     .replace(':workoutId', mongoose.Types.ObjectId()))
-                .send({
-                    exerciseId: exerciseId,
-                    content: content
-                });
+                .send();
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
@@ -899,8 +846,6 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
             const username = 'test_username';
             const sessionId = mongoose.Types.ObjectId();
             const workoutId = 'not in valid format';
-            const exerciseId = mongoose.Types.ObjectId();
-            const content = '40x10;40x10;40x10';
 
             const expectedResponse = {
                 message: `Delete Workout: Invalid workoutId format.`
@@ -911,10 +856,7 @@ describe('DELETE /api/:username/sessions/:sessionId/:workoutId', () => {
                     .replace(':username', username)
                     .replace(':sessionId', sessionId)
                     .replace(':workoutId', workoutId))
-                .send({
-                    exerciseId: exerciseId,
-                    content: content
-                });
+                .send();
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
