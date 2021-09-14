@@ -10,52 +10,42 @@ const Workout = require("../models/user").Workout;
 const isValidExerciseContent = require('./utils').isValidExerciseContent;
 
 
-router.get('/:sessionId/:workoutId', authorise, (req, res) => {
+router.get('/:sessionId', authorise, (req, res) => {
     const username = req.params.username;
     const sessionId = req.params.sessionId;
-    const workoutId = req.params.workoutId;
 
     if (!mongoose.Types.ObjectId.isValid(sessionId)) {
         return res.status(400).json({
-            message: `Get Workout: Invalid sessionId format.`
+            message: `Get Workouts: Invalid sessionId format.`
         });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(workoutId)) {
-        return res.status(400).json({
-            message: `Get Workout: Invalid workoutId format.`
-        });
-    }
 
     User.findOne({ username: username })
         .then((user) => {
             if (!user) {
                 return res.status(400).json({
-                    message: `Get Workout: User ${username} not found.`
+                    message: `Get Workouts: User ${username} not found.`
                 });
             }
 
             User.aggregate([
                 { $match: { username: username } },
-                { $project: { sessions: true } },
+                { $project: { _id: false, sessions: true } },
                 { $unwind: '$sessions' },
-                { $match: { 'sessions._id': mongoose.Types.ObjectId(sessionId) } },
-                { $unwind: '$sessions.workouts' },
-                { $match: { 'sessions.workouts._id': mongoose.Types.ObjectId(workoutId) } }
+                { $match: { 'sessions._id': mongoose.Types.ObjectId(sessionId) } }
             ])
                 .then((result) => {
                     if (!result || result.length === 0) {
                         return res.status(400).json({
-                            message: `Get Workout: Cannot find session-workout ${sessionId}/${workoutId}.`
+                            message: `Get Workouts: Cannot find session ${sessionId}.`
                         });
                     }
 
                     const session = result[0].sessions;
-                    session.workout = session.workouts;
-                    delete session.workouts;
 
                     return res.status(200).json({
-                        message: 'Get Workout: Success.',
+                        message: 'Get Workouts: Success.',
                         session: session
                     });
                 })
@@ -313,5 +303,19 @@ router.delete('/:sessionId/:workoutId', authorise, (req, res) => {
             });
         });
 });
+
+
+router.get('/history/:exerciseId', authorise, (req, res) => {
+    //Aggregate pipeline
+    //- match user
+    //- project
+    //- unwind sessions
+    //- unwind workouts
+    //- filter exerciseId
+    //- sort by date
+    //- ?
+    
+});
+
 
 module.exports = router;
