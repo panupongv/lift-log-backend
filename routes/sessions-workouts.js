@@ -36,7 +36,7 @@ router.get('/:sessionId/:workoutId', authorise, (req, res) => {
             }
 
             User.aggregate([
-                { $match: { username: 'user456' } },
+                { $match: { username: username } },
                 { $project: { sessions: true } },
                 { $unwind: '$sessions' },
                 { $match: { 'sessions._id': mongoose.Types.ObjectId(sessionId) } },
@@ -50,9 +50,13 @@ router.get('/:sessionId/:workoutId', authorise, (req, res) => {
                         });
                     }
 
+                    const session = result[0].sessions;
+                    session.workout = session.workouts;
+                    delete session.workouts;
+
                     return res.status(200).json({
                         message: 'Get Workout: Success.',
-                        session: result[0].sessions
+                        session: session
                     });
                 })
                 .catch((err) => {
