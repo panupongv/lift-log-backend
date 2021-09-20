@@ -6,17 +6,8 @@ const authorise = require('./authorisation').authorise;
 const User = require("../models/user").User;
 const Session = require("../models/user").Session;
 
-
-const isValidStartLimit = (stringValue) => {
-    return !isNaN(stringValue) &&
-        Number.isInteger(parseFloat(stringValue)) &&
-        parseFloat(stringValue) >= 0;
-};
-
-const isValidDateFormat = (dateString) => {
-    var regEx = /^\d{4}-\d{2}-\d{2}Z$/;
-    return dateString.match(regEx) !== null;
-};
+const isValidStartLimit = require('./utils').isValidStartLimit;
+const isValidDateFormat = require('./utils').isValidDateFormat;
 
 
 router.get('/', authorise, (req, res) => {

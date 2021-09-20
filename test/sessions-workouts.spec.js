@@ -185,8 +185,120 @@ describe('GET /api/:username/sessions/:sessionId/', () => {
 });
 
 
-describe('POST /api/:username/sessions/:sessionId', () => {
+describe('GET /api/:username/sessions/history/:exerciseId', () => {
+    const routeTemplate = '/api/:username/sessions/history/:exerciseId?date={date}&offset={offset}';
 
+    // (many) Valid cases ****
+
+    // newest
+
+    // middle
+
+    // oldest
+
+    // empty, no matching exercise
+
+
+
+    // Invalid exerciseId
+
+    describe('given an exerciseId in an invalid format', () => {
+        it('should return a 400 - Bad request, an error message (invalid exerciseId) and no other content', async () => {
+            const username = 'test_user';
+            const exerciseId = 'not-valid';
+            const date = '2021-09-01Z';
+            const offset = 0;
+
+            const expectedResponse = { message: 'Get Workouts: Invalid exerciseId format.' };
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseId)
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+        });
+    });
+
+    describe('given an invalid date', () => {
+        it('should return a 400 - Bad request, an error message (invalid date) and no other content', async () => {
+            const username = 'test_user';
+            const exerciseId = mongoose.Types.ObjectId();
+            const date = '2021-09-000';
+            const offset = 0;
+
+            const expectedResponse = { message: `Get Workouts: Please provide a valid date.` };
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseId)
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+        });
+    });
+
+    describe('given an invalid offset', () => {
+        it('should return a 400 - Bad request, an error message (invalid offset) and no other content', async () => {
+            const username = 'test_user';
+            const exerciseId = mongoose.Types.ObjectId();
+            const date = '2021-09-01Z';
+            const offset = 'not an int';
+
+            const expectedResponse = { message: `Get Workouts: Invalid offset parameter.` };
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseId)
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+        });
+    });
+
+    describe('given valid parameters but with a username with user record', () => {
+        it('should return a 400 - Bad request, an error message (no user) and no other content', async () => {
+            const username = 'test_user';
+            const exerciseId = mongoose.Types.ObjectId();
+            const date = '2021-09-01Z';
+            const offset = 1;
+
+            const expectedResponse = { message: `Get History: User ${username} not found.` };
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseId)
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+        });
+    });
+
+
+});
+
+
+describe('POST /api/:username/sessions/:sessionId', () => {
     const routeTemplate = '/api/:username/sessions/:sessionId';
 
     describe('given a valid username, sessionId and request body', () => {

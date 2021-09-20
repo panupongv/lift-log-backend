@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
 const User = require("../models/user").User;
 const Workout = require("../models/user").Workout;
 
+const isValidDateFormat = require('./utils').isValidDateFormat;
+const isValidHistoryOffset = require('./utils').isValidHistoryOffset;
 const isValidExerciseContent = require('./utils').isValidExerciseContent;
 
 
@@ -19,7 +21,6 @@ router.get('/:sessionId', authorise, (req, res) => {
             message: `Get Workouts: Invalid sessionId format.`
         });
     }
-
 
     User.findOne({ username: username })
         .then((user) => {
@@ -43,7 +44,6 @@ router.get('/:sessionId', authorise, (req, res) => {
                     }
 
                     const session = result[0].sessions;
-
                     return res.status(200).json({
                         message: 'Get Workouts: Success.',
                         session: session
@@ -56,6 +56,106 @@ router.get('/:sessionId', authorise, (req, res) => {
                     });
                 });
 
+        }).catch((err) => {
+            console.log(err);
+            return res.status(500).json({
+                error: err
+            });
+        });
+});
+
+
+router.get('/history/:exerciseId', authorise, (req, res) => {
+    const username = req.params.username;
+    const exerciseId = req.params.exerciseId;
+    const date = req.query.date;
+    const offset = req.query.offset ? parseInt(req.query.offset) : 0;
+
+    if (!mongoose.Types.ObjectId.isValid(exerciseId)) {
+        return res.status(400).json({
+            message: `Get Workouts: Invalid exerciseId format.`
+        });
+    }
+
+    if (!date || !isValidDateFormat(date)) {
+        return res.status(400).json({
+            message: `Get Workouts: Please provide a valid date.`
+        });
+    }
+
+    if (!isValidHistoryOffset(offset)) {
+        return res.status(400).json({
+            message: `Get Workouts: Invalid offset parameter.`
+        });
+    }
+
+    User.findOne({ username: username })
+        .then((user) => {
+            if (!user) {
+                return res.status(400).json({
+                    message: `Get History: User ${username} not found.`
+                });
+            }
+
+            User.aggregate([
+                { $match: { username: username } },
+                { $project: { sessions: true } },
+                { $unwind: '$sessions' },
+                { $unwind: '$sessions.workouts' },
+                { $match: { 'sessions.workouts.exerciseId': mongoose.Types.ObjectId(exerciseId) } },
+                { $sort: { 'sessions.date': -1 } },
+            ]).then((result) => {
+                if (!result) {
+                    return res.status(400).json({
+                        message: `Get History: Bad query.`
+                    });
+                }
+
+                if (result.length === 0) {
+                    return res.status(200).json({
+                        message: `Get History: Success.`,
+                    });
+                }
+
+                const targetDate = new Date(date);
+
+                //const firstDateAppearanceIndex = result.findIndex(item => new Date(item.sessions.date) <= targetDate);
+                //const sessionIndex = offset +
+                //    (firstDateAppearanceIndex !== -1 ? (firstDateAppearanceIndex) : (result.length - 1));
+
+                const sessionIndex = offset +
+                    (targetDate <= result[result.length - 1].sessions.date ?
+                        result.length - 1 :
+                        result.findIndex(item => new Date(item.sessions.date) <= targetDate));
+
+                const session = result[sessionIndex];
+                const olderSession = result[sessionIndex + 1];
+                const newerSession = result[sessionIndex - 1];
+
+                const response = {
+                    message: `Get History: Success.`,
+                };
+
+                if (newerSession) {
+                    response.newerSession = newerSession.sessions;
+                }
+
+                if (session) {
+                    response.session = session.sessions
+                }
+
+                if (olderSession) {
+                    response.olderSession = olderSession.sessions;
+                }
+
+                return res.status(200).json(response);
+
+            }).catch((err) => {
+                console.log(err);
+                return res.status(500).json({
+                    error: err
+                });
+            });
         }).catch((err) => {
             console.log(err);
             return res.status(500).json({
@@ -304,18 +404,6 @@ router.delete('/:sessionId/:workoutId', authorise, (req, res) => {
         });
 });
 
-
-router.get('/history/:exerciseId', authorise, (req, res) => {
-    //Aggregate pipeline
-    //- match user
-    //- project
-    //- unwind sessions
-    //- unwind workouts
-    //- filter exerciseId
-    //- sort by date
-    //- ?
-    
-});
 
 
 module.exports = router;
