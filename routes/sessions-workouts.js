@@ -119,10 +119,6 @@ router.get('/history/:exerciseId', authorise, (req, res) => {
 
                 const targetDate = new Date(date);
 
-                //const firstDateAppearanceIndex = result.findIndex(item => new Date(item.sessions.date) <= targetDate);
-                //const sessionIndex = offset +
-                //    (firstDateAppearanceIndex !== -1 ? (firstDateAppearanceIndex) : (result.length - 1));
-
                 const sessionIndex = offset +
                     (targetDate <= result[result.length - 1].sessions.date ?
                         result.length - 1 :

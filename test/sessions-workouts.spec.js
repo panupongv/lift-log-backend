@@ -198,9 +198,259 @@ describe('GET /api/:username/sessions/history/:exerciseId', () => {
 
     // empty, no matching exercise
 
+    describe('given a valid request in various forms', () => {
+        const username = 'test_user';
+        const password = 'test_password';
 
+        const exerciseIds = [
+            mongoose.Types.ObjectId(),
+            mongoose.Types.ObjectId(),
+            mongoose.Types.ObjectId(),
+            mongoose.Types.ObjectId()
+        ];
 
-    // Invalid exerciseId
+        const sessions = [
+            new Session({ name: 'sess1', date: '2021-09-01Z' }),
+            new Session({ name: 'sess2', date: '2021-09-02Z' }),
+            new Session({ name: 'sess5', date: '2021-09-05Z' }),
+            new Session({ name: 'sess4', date: '2021-09-04Z' }),
+            new Session({ name: 'another-sess2', date: '2021-09-02Z' }),
+            new Session({ name: 'sess3', date: '2021-09-03Z' }),
+        ];
+
+        sessions[0].workouts = [
+            new Workout({
+                content: '0000',
+                exerciseId: exerciseIds[0]
+            }),
+            new Workout({
+                content: '1111',
+                exerciseId: exerciseIds[1]
+            }),
+            new Workout({
+                content: '2222',
+                exerciseId: exerciseIds[2]
+            }),
+        ];
+
+        sessions[1].workouts = [
+            new Workout({
+                content: '1111',
+                exerciseId: exerciseIds[1]
+            }),
+            new Workout({
+                content: '2222',
+                exerciseId: exerciseIds[2]
+            }),
+            new Workout({
+                content: '3333',
+                exerciseId: exerciseIds[3]
+            }),
+        ];
+
+        sessions[2].workouts = [
+            new Workout({
+                content: '0000',
+                exerciseId: exerciseIds[0]
+            }),
+            new Workout({
+                content: '1111',
+                exerciseId: exerciseIds[1]
+            }),
+            new Workout({
+                content: '3333',
+                exerciseId: exerciseIds[3]
+            }),
+        ];
+
+        sessions[3].workouts = [
+            new Workout({
+                content: '2222',
+                exerciseId: exerciseIds[2]
+            }),
+            new Workout({
+                content: '3333',
+                exerciseId: exerciseIds[3]
+            }),
+            new Workout({
+                content: '0000',
+                exerciseId: exerciseIds[0]
+            }),
+        ];
+
+        sessions[4].workouts = [
+            new Workout({
+                content: '1111',
+                exerciseId: exerciseIds[1]
+            }),
+            new Workout({
+                content: '222',
+                exerciseId: exerciseIds[2]
+            }),
+            new Workout({
+                content: '3333',
+                exerciseId: exerciseIds[3]
+            }),
+            new Workout({
+                content: '0000',
+                exerciseId: exerciseIds[0]
+            }),
+        ];
+
+        sessions[5].workouts = [
+            new Workout({
+                content: '0000',
+                exerciseId: exerciseIds[0]
+            }),
+            new Workout({
+                content: '1111',
+                exerciseId: exerciseIds[1]
+            }),
+            new Workout({
+                content: '3333',
+                exerciseId: exerciseIds[3]
+            }),
+        ];
+
+        it('should return a 200 - Ok response with the newer, older and the session on the date', async () => {
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: sessions,
+            });
+            await user.save();
+
+            const date = '2021-09-03Z';
+            const offset = 0;
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseIds[0])
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+
+            expect(new Date(responseBody.newerSession.date)).toEqual(new Date('2021-09-04Z'));
+            expect(new Date(responseBody.session.date)).toEqual(new Date('2021-09-03Z'));
+            expect(new Date(responseBody.olderSession.date)).toEqual(new Date('2021-09-02Z'));
+        });
+
+        it('should return a 200 - Ok response with just the older and the session on the date', async () => {
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: sessions,
+            });
+            await user.save();
+
+            const date = '2021-09-10Z';
+            const offset = 0;
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseIds[0])
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+
+            expect(responseBody.newerSession).toBeUndefined()
+            expect(new Date(responseBody.session.date)).toEqual(new Date('2021-09-05Z'));
+            expect(new Date(responseBody.olderSession.date)).toEqual(new Date('2021-09-04Z'));
+        });
+
+        it('should return a 200 - Ok response with just the newer and the session on the date', async () => {
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: sessions,
+            });
+            await user.save();
+
+            const date = '2021-08-01Z';
+            const offset = 0;
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseIds[0])
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+
+            expect(responseBody.newerSession.name).toEqual('another-sess2');
+            expect(new Date(responseBody.newerSession.date)).toEqual(new Date('2021-09-02Z'));
+            expect(new Date(responseBody.session.date)).toEqual(new Date('2021-09-01Z'));
+            expect(responseBody.olderSession).toBeUndefined() 
+        });
+
+        it('should return a 200 - Ok response with all three possible sesssions (offsetted)', async () => {
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: sessions,
+            });
+            await user.save();
+
+            const date = '2021-08-01Z';
+            const offset = -1;
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', exerciseIds[0])
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+
+            expect(responseBody.newerSession.name).toEqual('sess3');
+            expect(responseBody.session.name).toEqual('another-sess2');
+            expect(responseBody.olderSession.name).toEqual('sess1');
+        });
+
+        it('should return a 200 - Ok response with no resulting sessions', async () => {
+            const user = new User({
+                username: username,
+                password: password,
+                sessions: sessions,
+            });
+            await user.save();
+
+            const newExerciseId = mongoose.Types.ObjectId();
+
+            const date = '2021-08-01Z';
+            const offset = 0;
+
+            const response = await supertest(app)
+                .get(routeTemplate
+                    .replace(':username', username)
+                    .replace(':exerciseId', newExerciseId)
+                    .replace('{date}', date)
+                    .replace('{offset}', offset))
+                .send();
+            const responseBody = JSON.parse(response.text);
+
+            expect(response.statusCode).toBe(200);
+
+            expect(responseBody.newerSession).toBeUndefined();
+            expect(responseBody.session).toBeUndefined();
+            expect(responseBody.olderSession).toBeUndefined();
+        });
+    });
+
 
     describe('given an exerciseId in an invalid format', () => {
         it('should return a 400 - Bad request, an error message (invalid exerciseId) and no other content', async () => {
@@ -293,8 +543,6 @@ describe('GET /api/:username/sessions/history/:exerciseId', () => {
             expect(responseBody.message).toEqual(expectedResponse.message);
         });
     });
-
-
 });
 
 
