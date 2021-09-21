@@ -74,19 +74,19 @@ router.get('/history/:exerciseId', authorise, (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(exerciseId)) {
         return res.status(400).json({
-            message: `Get Workouts: Invalid exerciseId format.`
+            message: `Get History: Invalid exerciseId format.`
         });
     }
 
     if (!date || !isValidDateFormat(date)) {
         return res.status(400).json({
-            message: `Get Workouts: Please provide a valid date.`
+            message: `Get History: Please provide a valid date.`
         });
     }
 
     if (!isValidHistoryOffset(offset)) {
         return res.status(400).json({
-            message: `Get Workouts: Invalid offset parameter.`
+            message: `Get History: Invalid offset parameter.`
         });
     }
 

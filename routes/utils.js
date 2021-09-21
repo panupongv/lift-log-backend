@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const isValidStartLimit = (stringValue) => {
     return !isNaN(stringValue) &&
         Number.isInteger(parseFloat(stringValue)) &&
@@ -24,12 +23,6 @@ const isValidWeightAndReps = (stringValue) => {
         parseFloat(stringValue) >= 0;
 };
 
-=======
-const isValidWeightAndReps = (stringValue) => {
-    return !isNaN(stringValue) &&
-        parseFloat(stringValue) >= 0;
-}
->>>>>>> d8479e82911a804f1a6a8870422c8cea068aaf6b
 
 const isValidExerciseContent = (contentString) => {
     if (contentString === '') return true;
@@ -45,10 +38,7 @@ const isValidExerciseContent = (contentString) => {
     }
 };
 
-<<<<<<< HEAD
 module.exports.isValidStartLimit = isValidStartLimit;
 module.exports.isValidDateFormat = isValidDateFormat;
 module.exports.isValidHistoryOffset = isValidHistoryOffset;
-=======
->>>>>>> d8479e82911a804f1a6a8870422c8cea068aaf6b
 module.exports.isValidExerciseContent = isValidExerciseContent;

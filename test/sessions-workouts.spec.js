@@ -449,7 +449,7 @@ describe('GET /api/:username/sessions/history/:exerciseId', () => {
             const date = '2021-09-01Z';
             const offset = 0;
 
-            const expectedResponse = { message: 'Get Workouts: Invalid exerciseId format.' };
+            const expectedResponse = { message: 'Get History: Invalid exerciseId format.' };
 
             const response = await supertest(app)
                 .get(routeTemplate
@@ -472,7 +472,7 @@ describe('GET /api/:username/sessions/history/:exerciseId', () => {
             const date = '2021-09-000';
             const offset = 0;
 
-            const expectedResponse = { message: `Get Workouts: Please provide a valid date.` };
+            const expectedResponse = { message: `Get History: Please provide a valid date.` };
 
             const response = await supertest(app)
                 .get(routeTemplate
@@ -495,7 +495,7 @@ describe('GET /api/:username/sessions/history/:exerciseId', () => {
             const date = '2021-09-01Z';
             const offset = 'not an int';
 
-            const expectedResponse = { message: `Get Workouts: Invalid offset parameter.` };
+            const expectedResponse = { message: `Get History: Invalid offset parameter.` };
 
             const response = await supertest(app)
                 .get(routeTemplate
