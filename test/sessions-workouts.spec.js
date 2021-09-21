@@ -188,16 +188,6 @@ describe('GET /api/:username/sessions/:sessionId/', () => {
 describe('GET /api/:username/sessions/history/:exerciseId', () => {
     const routeTemplate = '/api/:username/sessions/history/:exerciseId?date={date}&offset={offset}';
 
-    // (many) Valid cases ****
-
-    // newest
-
-    // middle
-
-    // oldest
-
-    // empty, no matching exercise
-
     describe('given a valid request in various forms', () => {
         const username = 'test_user';
         const password = 'test_password';

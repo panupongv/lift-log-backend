@@ -44,6 +44,7 @@ router.get('/:sessionId', authorise, (req, res) => {
                     }
 
                     const session = result[0].sessions;
+
                     return res.status(200).json({
                         message: 'Get Workouts: Success.',
                         session: session
@@ -399,7 +400,6 @@ router.delete('/:sessionId/:workoutId', authorise, (req, res) => {
             });
         });
 });
-
 
 
 module.exports = router;
