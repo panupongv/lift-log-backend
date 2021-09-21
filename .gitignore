@@ -119,6 +119,3 @@ dist
 
 # dev util scripts
 dev-util/
-
-# test report
-test-report.html
