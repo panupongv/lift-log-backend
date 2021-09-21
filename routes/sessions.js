@@ -6,8 +6,17 @@ const authorise = require('./authorisation').authorise;
 const User = require("../models/user").User;
 const Session = require("../models/user").Session;
 
-const isValidStartLimit = require('./utils').isValidStartLimit;
-const isValidDateFormat = require('./utils').isValidDateFormat;
+
+const isValidStartLimit = (stringValue) => {
+    return !isNaN(stringValue) &&
+        Number.isInteger(parseFloat(stringValue)) &&
+        parseFloat(stringValue) >= 0;
+};
+
+const isValidDateFormat = (dateString) => {
+    var regEx = /^\d{4}-\d{2}-\d{2}Z$/;
+    return dateString.match(regEx) !== null;
+};
 
 
 router.get('/', authorise, (req, res) => {
@@ -219,13 +228,7 @@ router.put('/:sessionId', authorise, (req, res) => {
             if (newDate) fieldsToUpdate['sessions.$.date'] = newDate;
             if (newLocation) fieldsToUpdate['sessions.$.location'] = newLocation;
 
-            User.findOneAndUpdate(
-                { username: username, 'sessions._id': sessionId },
-                fieldsToUpdate,
-                {
-                    'fields': { username: 1, 'sessions._id': 1, 'sessions.name': 1, 'sessions.date': 1, 'sessions.location': 1 },
-                    'new': true
-                })
+            User.findOneAndUpdate({ username: username, 'sessions._id': sessionId }, fieldsToUpdate, { new: true })
                 .then((result) => {
                     if (!result) {
                         return res.status(400).json({
@@ -247,7 +250,9 @@ router.delete('/:sessionId', authorise, (req, res) => {
     const username = req.params.username;
     const sessionId = req.params.sessionId;
 
-    User.findOne({ username: username })
+    User.findOne(
+        { username: username },
+        )
         .then((user) => {
             if (!user) {
                 return res.status(400).json({
