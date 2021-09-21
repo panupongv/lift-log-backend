@@ -4,11 +4,16 @@ const exerciseSchema = mongoose.Schema({
     name: { type: String, require: true }
 });
 
+const workoutSchema = mongoose.Schema({
+    exerciseId: { type: mongoose.Types.ObjectId, require: true },
+    content: { type: String, default: '' }
+});
+
 const sessionSchema = mongoose.Schema({
     name: { type: String, require: true },    
     date: { type: Date, require: true },
     location: { type: String, default: '' },
-    workouts: { type: [], default: []}
+    workouts: { type: [workoutSchema], default: []}
 });
 
 const userSchema = mongoose.Schema({
@@ -19,5 +24,6 @@ const userSchema = mongoose.Schema({
 });
 
 module.exports.Exercise = mongoose.model('Exercise', exerciseSchema);
+module.exports.Workout = mongoose.model('Workout', workoutSchema);
 module.exports.Session = mongoose.model('Session', sessionSchema);
 module.exports.User = mongoose.model('User', userSchema);
