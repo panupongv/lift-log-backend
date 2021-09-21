@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest --runInBand ./test"
+    "test": "jest --runInBand --collectCoverage ./test"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
     "bcrypt": "^5.0.1",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
+    "jest-html-reporter": "^3.4.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.13.2",
     "sinon": "^11.1.2",
