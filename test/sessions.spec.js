@@ -80,7 +80,7 @@ describe('GET /api/:username/sessions/?start={start}&limit={limit}', () => {
                 password: password,
                 sessions: sessions
             });
-            user.save();
+            await user.save();
 
             const sortedSessions = sessions.reverse();
 
@@ -730,7 +730,28 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
         });
     });
 
-    describe('given a request body without field available for edit', () => {
+    describe('given an invalid sessionId', () => {
+        it('should return 400 - Bad request without the deleted session record', async () => {
+            const username = 'test_username';
+            
+            const expectedResponse = {
+                message: `Update Session: Invalid sessionId.`
+            };
+
+            const response = await supertest(app)
+                .put(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', 'invalid-id'))
+                .send();
+            const responseBody = JSON.parse(response.text);
+            
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.updatedSession).toBeUndefined();
+        });
+    });
+
+    describe('given a request body without specified fields to edit', () => {
         it('should return 400 - Bad request with an error message (no fields) and no resulting sessions', async () => {
             const username = 'test_username';
 
@@ -742,12 +763,13 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             const response = await supertest(app)
                 .put(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                    .replace(':sessionId', mongoose.Types.ObjectId()))
                 .send(emptyBody);
             const responseBody = JSON.parse(response.text);
 
             expect(response.statusCode).toBe(400);
             expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.updatedSession).toBeUndefined();
         });
     });
 
@@ -766,7 +788,7 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             const response = await supertest(app)
                 .put(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                    .replace(':sessionId', mongoose.Types.ObjectId()))
                 .send(bodyWithInvalidDate);
             const responseBody = JSON.parse(response.text);
 
@@ -793,7 +815,7 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             const response = await supertest(app)
                 .put(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                    .replace(':sessionId', mongoose.Types.ObjectId()))
                 .send(requestBody);
             const responseBody = JSON.parse(response.text);
 
@@ -815,7 +837,7 @@ describe('PUT /api/:username/sessions/:sessionId', () => {
             });
             await user.save();
 
-            const sessionId = mongoose.Types.ObjectId(); //'non-existing-session';
+            const sessionId = mongoose.Types.ObjectId();
 
             const expectedResponse = {
                 message: `Update Session: Session ${sessionId} not found.`
@@ -898,7 +920,26 @@ describe('DELETE /api/:username/sessions/:sessionId', () => {
         });
     });
 
-    // No user
+    describe('given an invalid sessionId', () => {
+        it('should return 400 - Bad request without the deleted session record', async () => {
+            const username = 'test_username';
+            
+            const expectedResponse = {
+                message: `Delete Session: Invalid sessionId.`
+            };
+
+            const response = await supertest(app)
+                .delete(routeTemplate
+                    .replace(':username', username)
+                    .replace(':sessionId', 'invalid-id'))
+                .send();
+            const responseBody = JSON.parse(response.text);
+            
+            expect(response.statusCode).toBe(400);
+            expect(responseBody.message).toEqual(expectedResponse.message);
+            expect(responseBody.deletedSession).toBeUndefined();
+        });
+    });
 
     describe('given a username with user record', () => {
         it('should return 400 - Bad request without the deleted session record', async () => {
@@ -911,7 +952,7 @@ describe('DELETE /api/:username/sessions/:sessionId', () => {
             const response = await supertest(app)
                 .delete(routeTemplate
                     .replace(':username', username)
-                    .replace(':sessionId', 'session-id-doesnt-matter'))
+                    .replace(':sessionId', mongoose.Types.ObjectId()))
                 .send();
             const responseBody = JSON.parse(response.text);
             
@@ -931,7 +972,7 @@ describe('DELETE /api/:username/sessions/:sessionId', () => {
                 username: username,
                 password: password
             });
-            user.save();
+            await user.save();
 
             const testSessionId = mongoose.Types.ObjectId();
             const expectedResponse = {

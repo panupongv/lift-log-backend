@@ -3,20 +3,12 @@ const router = express.Router({ mergeParams: true });
 
 const authorise = require('./authorisation').authorise;
 
+const mongoose = require('mongoose');
 const User = require("../models/user").User;
 const Session = require("../models/user").Session;
 
-
-const isValidStartLimit = (stringValue) => {
-    return !isNaN(stringValue) &&
-        Number.isInteger(parseFloat(stringValue)) &&
-        parseFloat(stringValue) >= 0;
-};
-
-const isValidDateFormat = (dateString) => {
-    var regEx = /^\d{4}-\d{2}-\d{2}Z$/;
-    return dateString.match(regEx) !== null;
-};
+const isValidStartLimit = require('./utils').isValidStartLimit;
+const isValidDateFormat = require('./utils').isValidDateFormat;
 
 
 router.get('/', authorise, (req, res) => {
@@ -202,6 +194,12 @@ router.put('/:sessionId', authorise, (req, res) => {
     const newDate = req.body.date;
     const newLocation = req.body.location;
 
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return res.status(400).json({
+            message: `Update Session: Invalid sessionId.`
+        });
+    }
+
     if (!newName && !newDate && !newLocation) {
         return res.status(400).json({
             message: `Update Session: No fields to update.`
@@ -228,7 +226,13 @@ router.put('/:sessionId', authorise, (req, res) => {
             if (newDate) fieldsToUpdate['sessions.$.date'] = newDate;
             if (newLocation) fieldsToUpdate['sessions.$.location'] = newLocation;
 
-            User.findOneAndUpdate({ username: username, 'sessions._id': sessionId }, fieldsToUpdate, { new: true })
+            User.findOneAndUpdate(
+                { username: username, 'sessions._id': sessionId },
+                fieldsToUpdate,
+                {
+                    'fields': { username: 1, 'sessions._id': 1, 'sessions.name': 1, 'sessions.date': 1, 'sessions.location': 1 },
+                    'new': true
+                })
                 .then((result) => {
                     if (!result) {
                         return res.status(400).json({
@@ -250,9 +254,13 @@ router.delete('/:sessionId', authorise, (req, res) => {
     const username = req.params.username;
     const sessionId = req.params.sessionId;
 
-    User.findOne(
-        { username: username },
-        )
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return res.status(400).json({
+            message: `Delete Session: Invalid sessionId.`
+        });
+    }
+
+    User.findOne({ username: username })
         .then((user) => {
             if (!user) {
                 return res.status(400).json({
