@@ -3,6 +3,7 @@ const router = express.Router({ mergeParams: true });
 
 const authorise = require('./authorisation').authorise;
 
+const mongoose = require('mongoose');
 const User = require("../models/user").User;
 const Session = require("../models/user").Session;
 
@@ -193,6 +194,12 @@ router.put('/:sessionId', authorise, (req, res) => {
     const newDate = req.body.date;
     const newLocation = req.body.location;
 
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return res.status(400).json({
+            message: `Update Session: Invalid sessionId.`
+        });
+    }
+
     if (!newName && !newDate && !newLocation) {
         return res.status(400).json({
             message: `Update Session: No fields to update.`
@@ -246,6 +253,12 @@ router.put('/:sessionId', authorise, (req, res) => {
 router.delete('/:sessionId', authorise, (req, res) => {
     const username = req.params.username;
     const sessionId = req.params.sessionId;
+
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+        return res.status(400).json({
+            message: `Delete Session: Invalid sessionId.`
+        });
+    }
 
     User.findOne({ username: username })
         .then((user) => {
