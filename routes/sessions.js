@@ -41,7 +41,7 @@ router.get('/', authorise, (req, res) => {
 
             User.aggregate([
                 { $match: { username: username } },
-                { $project: { username: 1, sessions: { name: 1, date: 1, location: 1 } } },
+                { $project: { username: 1, sessions: { _id: 1, name: 1, date: 1, location: 1 } } },
                 { $unwind: '$sessions' },
                 { $sort: { 'sessions.date': -1 } },
                 { $skip: startInt },
@@ -61,8 +61,6 @@ router.get('/', authorise, (req, res) => {
                         err: err
                     });
                 });
-
-
         })
         .catch((err) => {
             console.log(`err: ${err}`);
@@ -100,7 +98,7 @@ router.get('/dates', authorise, (req, res) => {
 
             User.aggregate([
                 { $match: { username: username } },
-                { $project: { username: 1, sessions: { name: 1, date: 1, location: 1 } } },
+                { $project: { username: 1, sessions: { _id: 1, name: 1, date: 1, location: 1 } } },
                 { $unwind: '$sessions' },
                 { $match: { 'sessions.date': { $gte: new Date(startDate), $lte: new Date(endDate) } } },
                 { $sort: { 'sessions.date': 1 } },
